@@ -27,36 +27,38 @@ dictionary = set(readLines(filename))
 
 
 txt = "tamatematyka"
+# txt = "mamama"
 
 
 
 dprint("txt: \t{}\ndict: \t{}".format(txt, sorted(list(dictionary))))
 
-# dp[i][j] = cost of txt[i:j]
+# dp[i][j] = cost of txt_i, ..., txt_j
 dp = [[0] * len(txt) for _ in range(len(txt))]
 
 
-# # Init diag
-# for i in range(0, len(txt)):
-#     if txt[i:i+1] in dictionary:
-#         dp[i][i] = 1
-
 for i in range(len(txt)):
     for j in range(0, len(txt) - i):
-        dprint(">>> ({}, {}) -----> {}".format(j, i+j+1, txt[j: i+j+1])) 
-        if txt[j: i+j+1] in dictionary:
-            dp[j][i+j] = len(txt[j: i+j+1]) * len(txt[j: i+j+1])
-            dprint("{} in dict!!!".format(txt[j: i+j+1]))
-        else:
-            ans = [0]
-            for k in range(j+1, i+j+1):
-                if txt[j:k] in dictionary and txt[k:i+j+1] in dictionary:
-                    ans.append(len(txt[j:k])*len(txt[j:k]) + len(txt[k:i+j+1])*len(txt[k:i+j+1]))
-                    
-                dprint("({}, {}, {}) \t{}\t{}".format(j, i+j+1, k, txt[j:k], txt[k:i+j+1]))
-            dp[j][i+j] = max(ans)
+        # Translate coords to human-readable format
+        X = j
+        Y = i + j + 1
+        dprint(">>> ({}, {}) -----> {}".format(X, Y, txt[X: Y])) 
         
+        if txt[X: Y] in dictionary:
+            dp[j][i + j] = (i + 1) * (i + 1)
+            dprint("{} in dict!!!".format(txt[X: Y]))
+        else:
+            dprint("{} not in dict...".format(txt[X: Y]))
+            ans = [0]
+            for k in range(X + 1, Y):
+                # if txt[j:k] in dictionary and txt[k:Y] in dictionary:
+                # ans.append(k * k + (Y - k) * (Y - k))
+                dprint("({}, {}, {}) \t{} \t({}) \t{} \t({})".format(X, Y, k, txt[X:k], dp[X][k-1], txt[k:Y], dp[k][Y-1]))
+                ans.append(dp[X][k-1] + dp[k][Y-1])     
+            dp[j][i+j] = max(ans)  
+
         dprint()
+    # pprint(dp)    
     dprint("\t-----\t")
 
 
@@ -65,3 +67,11 @@ pprint(dp)
 #      (1,1) (1,2)
 #            (2,2) (2,3)
 #                  (3,3)
+
+#   m a m a m a
+# m   .   x
+# a     
+# m       .
+# a
+# m
+# a
