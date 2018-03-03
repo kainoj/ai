@@ -1,6 +1,6 @@
 from pprint import pprint
 
-debug = True
+debug = False
 
 # Printing for debugging purposes
 def dprint(str = ""):
@@ -27,14 +27,17 @@ dictionary = set(readLines(filename))
 
 
 txt = "tamatematyka"
-# txt = "mamama"
-
+txt = "mamama"
+txt = "tamatematykapustkinieznosi"
 
 
 dprint("txt: \t{}\ndict: \t{}".format(txt, sorted(list(dictionary))))
 
 # dp[i][j] = cost of txt_i, ..., txt_j
 dp = [[0] * len(txt) for _ in range(len(txt))]
+
+# For each slice txt_i, ..., txt_j remember k - slicing point
+ks = [[0] * len(txt) for _ in range(len(txt))]
 
 
 for i in range(len(txt)):
@@ -49,29 +52,36 @@ for i in range(len(txt)):
             dprint("{} in dict!!!".format(txt[X: Y]))
         else:
             dprint("{} not in dict...".format(txt[X: Y]))
-            ans = [0]
+            dpk = 0
+            kpos = 0
             for k in range(X + 1, Y):
-                # if txt[j:k] in dictionary and txt[k:Y] in dictionary:
-                # ans.append(k * k + (Y - k) * (Y - k))
                 dprint("({}, {}, {}) \t{} \t({}) \t{} \t({})".format(X, Y, k, txt[X:k], dp[X][k-1], txt[k:Y], dp[k][Y-1]))
-                ans.append(dp[X][k-1] + dp[k][Y-1])     
-            dp[j][i+j] = max(ans)  
+                if dp[X][k-1] + dp[k][Y-1] > dpk:
+                    dpk = dp[X][k-1] + dp[k][Y-1]
+                    kpos = k
+            dp[j][i+j] = dpk
+            ks[j][i+j] = kpos
 
         dprint()
-    # pprint(dp)    
     dprint("\t-----\t")
 
 
-pprint(dp)
+# pprint(dp)
+# dprint()
+# pprint(ks)
+
+def traceback(i, j, K):
+    if txt[i:j] in dictionary:
+        return txt[i:j]
+    k = K[i][j-1]
+    return traceback(i, k, K) + " " + traceback(k, j, K)
+
+print(traceback(0, len(txt), ks))
+    
+
+
+
 # (0,0) (0, 1)
 #      (1,1) (1,2)
 #            (2,2) (2,3)
 #                  (3,3)
-
-#   m a m a m a
-# m   .   x
-# a     
-# m       .
-# a
-# m
-# a
