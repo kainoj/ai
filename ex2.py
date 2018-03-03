@@ -1,8 +1,12 @@
+from pprint import pprint
 
-#    tamatematykapustkinieznosi
-#   t
-#   a   
-  
+debug = True
+
+# Printing for debugging purposes
+def dprint(str = ""):
+    if debug == True:
+        print(str)
+
 wordsLenHistogram = [0] * 31
 
 def readLines(filename):
@@ -14,29 +18,49 @@ def readLines(filename):
             wordsLenHistogram[len(line)] += 1
     return d
 
-dictionary = set(readLines("data/words_for_ai1.txt"))
+if debug == True:
+    filename = "data/ex4.test"
+else:
+    filename = "data/words_for_ai1.txt"
 
-# for (i, val) in enumerate(wordsLenHistogram):
-#     print("{}: \t {}".format(i, val))
+dictionary = set(readLines(filename))
 
-txt = "tamatematykapustkinieznosi"
 
-txt = "ala"
+txt = "tamatematyka"
+
+
+
+dprint("txt: \t{}\ndict: \t{}".format(txt, sorted(list(dictionary))))
+
 # dp[i][j] = cost of txt[i:j]
 dp = [[0] * len(txt) for _ in range(len(txt))]
 
 
-# Init diag
-for i in range(0, len(txt)):
-    if txt[i:i+1] in dictionary:
-        dp[i][i] = 1
+# # Init diag
+# for i in range(0, len(txt)):
+#     if txt[i:i+1] in dictionary:
+#         dp[i][i] = 1
 
 for i in range(len(txt)):
     for j in range(0, len(txt) - i):
-        print("({}, {})".format(j, i+j+1))
-    print()
+        dprint(">>> ({}, {}) -----> {}".format(j, i+j+1, txt[j: i+j+1])) 
+        if txt[j: i+j+1] in dictionary:
+            dp[j][i+j] = len(txt[j: i+j+1]) * len(txt[j: i+j+1])
+            dprint("{} in dict!!!".format(txt[j: i+j+1]))
+        else:
+            ans = [0]
+            for k in range(j+1, i+j+1):
+                if txt[j:k] in dictionary and txt[k:i+j+1] in dictionary:
+                    ans.append(len(txt[j:k])*len(txt[j:k]) + len(txt[k:i+j+1])*len(txt[k:i+j+1]))
+                    
+                dprint("({}, {}, {}) \t{}\t{}".format(j, i+j+1, k, txt[j:k], txt[k:i+j+1]))
+            dp[j][i+j] = max(ans)
+        
+        dprint()
+    dprint("\t-----\t")
 
 
+pprint(dp)
 # (0,0) (0, 1)
 #      (1,1) (1,2)
 #            (2,2) (2,3)
