@@ -7,6 +7,10 @@ def dprint(str = ""):
     if debug == True:
         print(str)
 
+def dpprint(str):
+    if debug == True:
+        pprint(str)
+
 # Read lines from file and return them as an array
 def readLines(filename):
     d = []
@@ -18,6 +22,9 @@ def readLines(filename):
 
 # Given 'matrix of slice points', restore spaces
 def traceback(i, j, K):
+    if i >= j:
+        return ""
+    dprint("i = {}\tj = {}\t --> {}".format(i, j, txt[i:j]))
     if txt[i:j] in dictionary:
         return txt[i:j]
     k = K[i][j-1]
@@ -48,7 +55,10 @@ def spacify(txt):
                 kpos = 0
                 for k in range(X + 1, Y):
                     dprint("({}, {}, {}) \t{} \t({}) \t{} \t({})".format(X, Y, k, txt[X:k], dp[X][k-1], txt[k:Y], dp[k][Y-1]))
-                    if dp[X][k-1] + dp[k][Y-1] > dpk:
+                    if dp[X][k-1] == 0 or dp[k][Y-1] == 0:
+                        dprint("mam cie smieciu")
+
+                    elif dp[X][k-1] + dp[k][Y-1] > dpk:
                         dpk = dp[X][k-1] + dp[k][Y-1]
                         kpos = k
                 dp[j][i+j] = dpk
@@ -56,21 +66,30 @@ def spacify(txt):
 
             dprint()
         dprint("\t-----\t")
+    dpprint(dp)
+    dpprint(ks)
     return traceback(0, len(txt), ks)
 
 
 dictionary = {}
 
 if __name__ == '__main__':
-    if debug == True:
-        filename = "data/ex4.test"
-    else:
-        filename = "data/words_for_ai1.txt"
 
-    txt = "tamatematykapustkinieznosi"
-    dprint("txt: \t{}\ndict: \t{}".format(txt, sorted(list(dictionary))))
+    dictfile = "data/words_for_ai1.txt"
+    inpfile = "data/pan_tadeusz_bez_spacji.txt"
 
-    dictionary = set(readLines(filename))
-    print(spacify(txt))
+    inpfile = "zad2_input.txt"
+    outfile = "zad2_output.txt"
 
+    # inpfile = "data/ex4-2.in"    
+    # debug = True
+
+    dictionary = set(readLines(dictfile))
+    txts = readLines(inpfile)
+
+    with open(outfile, 'w') as f:
+        for txt in txts:
+            res = spacify(txt)
+            f.write(res + "\n")
+        
     
