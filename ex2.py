@@ -2,17 +2,20 @@ from pprint import pprint
 
 debug = False
 
+
 # Printing for debugging purposes
-def dprint(str = ""):
-    if debug == True:
+def dprint(str=""):
+    if debug is True:
         print(str)
 
+
 def dpprint(str):
-    if debug == True:
+    if debug is True:
         pprint(str)
 
+
 # Read lines from file and return them as an array
-def readLines(filename):
+def readlines(filename):
     d = []
     with open(filename) as f:
         for line in f:
@@ -20,15 +23,15 @@ def readLines(filename):
     return d
 
 
-# Given 'matrix of slice points', restore spaces
-def traceback(i, j, K):
+# Given s - 'matrix of slice points', restore spaces
+def traceback(i, j, s):
     if i >= j:
         return ""
     dprint("i = {}\tj = {}\t --> {}".format(i, j, txt[i:j]))
     if txt[i:j] in dictionary:
         return txt[i:j]
-    k = K[i][j-1]
-    return traceback(i, k, K) + " " + traceback(k, j, K)
+    k = s[i][j-1]
+    return traceback(i, k, s) + " " + traceback(k, j, s)
 
 
 def spacify(txt):
@@ -36,30 +39,31 @@ def spacify(txt):
     dp = [[0] * len(txt) for _ in range(len(txt))]
 
     # For each slice txt_i, ..., txt_j remember k - slicing point
-    # ks[i][j] - a point, where txt_i, ..., txt_j was sliced 
+    # ks[i][j] - a point, where txt_i, ..., txt_j was sliced
     ks = [[0] * len(txt) for _ in range(len(txt))]
 
     for i in range(len(txt)):
         for j in range(0, len(txt) - i):
             # Translate coords to human-readable format
-            X = j
-            Y = i + j + 1
-            dprint(">>> ({}, {}) -----> {}".format(X, Y, txt[X: Y])) 
-            
-            if txt[X: Y] in dictionary:
+            x = j
+            y = i + j + 1
+            dprint(">>> ({}, {}) -----> {}".format(x, y, txt[x: y]))
+
+            if txt[x: y] in dictionary:
                 dp[j][i + j] = (i + 1) * (i + 1)
-                dprint("{} in dict!!!".format(txt[X: Y]))
+                dprint("{} in dict!!!".format(txt[x: y]))
             else:
-                dprint("{} not in dict...".format(txt[X: Y]))
+                dprint("{} not in dict...".format(txt[x: y]))
                 dpk = 0
                 kpos = 0
-                for k in range(X + 1, Y):
-                    dprint("({}, {}, {}) \t{} \t({}) \t{} \t({})".format(X, Y, k, txt[X:k], dp[X][k-1], txt[k:Y], dp[k][Y-1]))
-                    if dp[X][k-1] == 0 or dp[k][Y-1] == 0:
+                for k in range(x + 1, y):
+                    dprint("({}, {}, {}) \t{} \t({}) \t{} \t({})".format(x, y,
+                           k, txt[x:k], dp[x][k-1], txt[k:y], dp[k][y-1]))
+                    if dp[x][k-1] == 0 or dp[k][y-1] == 0:
                         dprint("mam cie smieciu")
 
-                    elif dp[X][k-1] + dp[k][Y-1] > dpk:
-                        dpk = dp[X][k-1] + dp[k][Y-1]
+                    elif dp[x][k-1] + dp[k][y-1] > dpk:
+                        dpk = dp[x][k-1] + dp[k][y-1]
                         kpos = k
                 dp[j][i+j] = dpk
                 ks[j][i+j] = kpos
@@ -81,15 +85,13 @@ if __name__ == '__main__':
     inpfile = "zad2_input.txt"
     outfile = "zad2_output.txt"
 
-    # inpfile = "data/ex4-2.in"    
+    # inpfile = "data/ex4-2.in"
     # debug = True
 
-    dictionary = set(readLines(dictfile))
-    txts = readLines(inpfile)
+    dictionary = set(readlines(dictfile))
+    txts = readlines(inpfile)
 
     with open(outfile, 'w') as f:
         for txt in txts:
             res = spacify(txt)
             f.write(res + "\n")
-        
-    
