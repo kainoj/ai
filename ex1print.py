@@ -10,7 +10,7 @@ def pos2d(s):
     row = ord(s[1]) - ord('1')
     return column, row
 
-def print_board( wk, wt, bk ):
+def print_board( wk, wt, bk, debug = False ):
 	"""
 	  wk - position of the white king
 	  wt - position of the white tower
@@ -23,7 +23,11 @@ def print_board( wk, wt, bk ):
 	board[r][c] = figures[1]
 	c,r = pos2d(bk)
 	board[r][c] = figures[2]
+
 	board =  [ [' '] +  [chr(j+97) for j in range(8)] ] + [ ([chr(j+49)] + board[j]) for j in range(8) ]
+
+	if debug:
+		board = [ [' '] +  [chr(j+ord('0')) for j in range(8)] ] + board
 	pprint(board)
 	#display(HTML(tabulate.tabulate(board, tablefmt='html').replace(
 	#     '<table>', '<table style="border: 2px solid black;">').replace(
