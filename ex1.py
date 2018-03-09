@@ -43,37 +43,12 @@ class onboard():
         """
         return str(chr(col + ord('a'))) + str(chr(row + ord('1'))) 
 
-
-    # True if a figure `f` is on board
-    def isOnBoard(self, col, row):
-        return 1 <= col and col <= 8 and 1 <= row and row <= 8
-
-
-    # Positions attacked by a king
-    def kingAttacks(self, king):
-        attacks = []
-        col, row = self.posInt(king)
-    
-        attacks.append(self.posStr(col - 1, row - 1))   # top left
-        attacks.append(self.posStr(col, row - 1))       # top top
-        attacks.append(self.posStr(col + 1, row - 1))   # top right
-        attacks.append(self.posStr(col - 1, row))       # left
-        attacks.append(self.posStr(col + 1, row))       # right
-        attacks.append(self.posStr(col - 1, row + 1))   # bot left
-        attacks.append(self.posStr(col, row + 1))       # bot
-        attacks.append(self.posStr(col + 1, row + 1))   # bot right
-
-        return set(attacks) & self.board
-
-
-    # Generate next white king move
-    def movesWhiteKing(self):
-        return self.kingAttacks(self.wk) - self.kingAttacks(self.bk) - set(self.wt)
     
     # is a given position free?
     def isFree(self, col, row):
         return (col, row) != self.posInt(self.wk) and (col, row) != self.posInt(self.bk)
-        
+    
+    # Fields attacked by white tower
     def whiteTowerAttacks(self):
 
         attacks = [self.wt]
@@ -107,9 +82,38 @@ class onboard():
             if self.isFree(c, row) == False: break
             c += 1 
 
-        return attacks
+        return set(attacks)
 
 
+    # Positions attacked by a king
+    def kingAttacks(self, king):
+        attacks = []
+        col, row = self.posInt(king)
+    
+        attacks.append(self.posStr(col - 1, row - 1))   # top left
+        attacks.append(self.posStr(col, row - 1))       # top top
+        attacks.append(self.posStr(col + 1, row - 1))   # top right
+        attacks.append(self.posStr(col - 1, row))       # left
+        attacks.append(self.posStr(col + 1, row))       # right
+        attacks.append(self.posStr(col - 1, row + 1))   # bot left
+        attacks.append(self.posStr(col, row + 1))       # bot
+        attacks.append(self.posStr(col + 1, row + 1))   # bot right
+
+        return set(attacks) & self.board
+
+
+    # Generate next white king move
+    def movesWhiteKing(self):
+        return self.kingAttacks(self.wk) - self.kingAttacks(self.bk) - set(self.wt)
+
+    def movesBlackKing(self):
+        return self.kingAttacks(self.bk) - self.kingAttacks(self.wk) - self.whiteTowerAttacks()
+    
+    def movesWhiteTower(self):
+        return self.whiteTowerAttacks()
+
+    def isCheckmate(self):
+        return self.movesBlackKing() == set()
 
         
         
@@ -129,7 +133,7 @@ if __name__ == '__main__':
             # Color, White King, White Tower, Black King
             col, wk, wt, bk = line.strip().split(" ")
             # OnBoard = onboard(wk, wt, bk, col)
-            OnBoard = onboard( 'b3', 'c3', 'f3', 'white')            
+            OnBoard = onboard( 'a3', 'b8', 'a1', 'white')            
             OnBoard.printb()
-            print(OnBoard.whiteTowerAttacks())
+            print(OnBoard.movesWhiteKing())
             
