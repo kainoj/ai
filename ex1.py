@@ -1,4 +1,5 @@
 import os
+import queue
 
 from ex1print import print_board
 
@@ -14,14 +15,9 @@ class onboard():
     
     # Prints the board
     def printb(self):
-        print("Next move: " + col)
+        print("Next move:    " + col)
         print_board(self.wk, self.wt, self.bk, True)
     
-
-    # Based on a current state, returns all possible moves
-    def nextMove(self):
-        return True
-
     
     # 2d int position of a figure `s`
     def posInt(self, s):
@@ -51,7 +47,7 @@ class onboard():
     # Fields attacked by white tower
     def whiteTowerAttacks(self):
 
-        attacks = [self.wt]
+        attacks = []
         col, row = self.posInt(self.wt)
 
         # Check if sth is above the tower
@@ -115,6 +111,45 @@ class onboard():
     def isCheckmate(self):
         return self.movesBlackKing() == set()
 
+
+    # Based on a current state, returns all possible moves
+    def nextMoves(self):
+        if self.col == "black":
+            self.col = "white"
+            return [(self.wk, self.wt, bk) for bk in self.movesBlackKing()]
+
+
+        elif self.col == "white":
+            self.col = "black"
+            return [(wk, self.wt, self.bk) for wk in self.movesWhiteKing()] \
+                    + [(self.wk, wt, self.bk) for wt in self.movesWhiteTower()]
+
+        print("Oops, no such color...")
+
+
+
+    def play(self):
+        q = queue.Queue()
+        q.put( (self.wk, self.wt, self.bk) )
+        states = set()
+        print("asd")
+        while q.empty() == False and self.isCheckmate() == False:
+            self.wk, self.wt, self.bk = q.get()
+            print("{} {} {}".format(self.wk, self.wt, self.bk))
+
+            if (self.wk, self.wt, self.bk) in states:
+                print("ups, we've already been here")
+            else:
+                states = states | set([(self.wk, self.wt, self.bk)])
+                for move in self.nextMoves():
+                    # print("added:\t {}".format(move))
+                    q.put(move)
+        print("{} {} {}".format(self.wk, self.wt, self.bk))
+        self.printb()
+
+                
+            
+
         
         
 
@@ -132,8 +167,8 @@ if __name__ == '__main__':
         for line in f:
             # Color, White King, White Tower, Black King
             col, wk, wt, bk = line.strip().split(" ")
-            # OnBoard = onboard(wk, wt, bk, col)
-            OnBoard = onboard( 'a3', 'b8', 'a1', 'white')            
+            OnBoard = onboard(wk, wt, bk, col)
+            # OnBoard = onboard( 'a3', 'b8', 'a1', 'white')            
             OnBoard.printb()
-            print(OnBoard.movesWhiteKing())
+            OnBoard.play()
             
