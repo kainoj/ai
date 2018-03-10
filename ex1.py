@@ -142,11 +142,10 @@ class onboard():
         True
         >>> onboard( 'd1', 'a2', 'b1', 'white').isCheckmate()
         False
+        >>> onboard( 'g6', 'e8', 'f8', 'white').isCheckmate()
+        False
         """
-        # m = ( self.movesBlackKing() | set([self.wt]) - self.movesWhiteKing()  )
-        # # print(m)
-        # return  m  == set() or m == set([self.wt])
-
+        
         return (self.bk in self.movesWhiteKing() \
              or self.bk in self.attacksWhiteTower()) \
              and self.movesBlackKing() == set()
@@ -154,22 +153,24 @@ class onboard():
     # Based on a current state, returns all possible moves
     def nextMoves(self):
         if self.col == "black":
-            self.col = "white"
-            return [(self.wk, self.wt, bk) for bk in self.movesBlackKing()]
+            # self.col = "white"
+            return [(self.wk, self.wt, bk, "white") for bk in self.movesBlackKing()]
 
 
         elif self.col == "white":
-            self.col = "black"
-            return [(wk, self.wt, self.bk) for wk in self.movesWhiteKing()] \
-                    + [(self.wk, wt, self.bk) for wt in self.movesWhiteTower()]
+            # self.col = "black"
+            return [(wk, self.wt, self.bk, "black") for wk in self.movesWhiteKing()] \
+                    + [(self.wk, wt, self.bk, "black") for wt in self.movesWhiteTower()]
 
         print("Oops, no such color...")
 
 
 
     def play(self):
+        
+        initState = (self.wk, self.wt, self.bk, self.col)
+        
         q = queue.Queue()
-        initState = (self.wk, self.wt, self.bk)
         q.put( initState )
 
         # states :: current state → (depth, previous state)
@@ -178,7 +179,7 @@ class onboard():
         while q.empty() == False and self.isCheckmate() == False:
 
             state = q.get()
-            self.wk, self.wt, self.bk = state
+            self.wk, self.wt, self.bk, self.col = state
             depth, _ = self.states[state]
 
             for move in self.nextMoves():
@@ -189,24 +190,27 @@ class onboard():
 
 
     def debug(self):
-        state = (self.wk, self.wt, self.bk)
-        hist = [state]
+        state = (self.wk, self.wt, self.bk, self.col)
+        hist = []
+        
         while True:
             depth, prev = self.states[state]
             if depth == 0:
                 break
             hist.append((prev, depth))
-            state = prev
-            
+            state = prev            
 
         for h in reversed(hist):
-            (wk, wt, bk), depth = h            
+            print(h)
+            (wk, wt, bk, col), depth = h            
             print()
             print("########################")
             print()
-            print("♔ = {}  ♖ = {}   ♚ = {}\t\td = {}".format(wk, wt, bk, depth))
+            print("♔ = {}  ♖ = {}   ♚ = {}\t\tNext: {}  ({})".format(wk, wt, bk, col, depth))
             print_board(wk, wt, bk)
             input()
+        
+        self.printb()
                       
         
 
@@ -224,8 +228,8 @@ if __name__ == '__main__':
             col, wk, wt, bk = line.strip().split(" ")
             OnBoard = onboard(wk, wt, bk, col)
             print(OnBoard.play())
+            
             OnBoard.debug()
-
             # OnBoard = onboard( 'a6', 'b1', 'a8', 'white')            
             # OnBoard.printb()
             
