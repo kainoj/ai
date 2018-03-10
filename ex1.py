@@ -109,11 +109,11 @@ class onboard():
     def attacksWhiteTower(self):
         """
         >>> sorted(list(onboard('a5', 'a2', 'e2', 'white').attacksWhiteTower()))
-        ['a1', 'a2', 'a3', 'a4', 'a5', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2']
+        ['a1', 'a3', 'a4', 'a5', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2']
         >>> sorted(list(onboard('b3', 'd1', 'b1', 'white').attacksWhiteTower()))
-        ['a1', 'b1', 'c1', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'e1', 'f1', 'g1', 'h1']
+        ['a1', 'b1', 'c1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'e1', 'f1', 'g1', 'h1']
         """
-        return self.whiteTowerAttacksOrMoves(self.isWhiteKing) 
+        return self.whiteTowerAttacksOrMoves(self.isWhiteKing) - set([self.wt])
 
     def movesWhiteTower(self):
         """
@@ -201,7 +201,6 @@ class onboard():
             state = prev            
 
         for h in reversed(hist):
-            print(h)
             (wk, wt, bk, col), depth = h            
             print()
             print("########################")
@@ -209,7 +208,8 @@ class onboard():
             print("♔ = {}  ♖ = {}   ♚ = {}\t\tNext: {}  ({})".format(wk, wt, bk, col, depth))
             print_board(wk, wt, bk)
             input()
-        
+
+        print("♔ = {}  ♖ = {}   ♚ = {}".format(self.wk, self.wt, self.bk))
         self.printb()
                       
         
@@ -229,7 +229,4 @@ if __name__ == '__main__':
             OnBoard = onboard(wk, wt, bk, col)
             print(OnBoard.play())
             
-            OnBoard.debug()
-            # OnBoard = onboard( 'a6', 'b1', 'a8', 'white')            
-            # OnBoard.printb()
-            
+            # OnBoard.debug()
