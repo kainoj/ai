@@ -40,12 +40,20 @@ class onboard():
         return str(chr(col + ord('a'))) + str(chr(row + ord('1'))) 
 
     
-    # is a given position free?
-    def isFree(self, col, row):
-        return (col, row) != self.posInt(self.wk) and (col, row) != self.posInt(self.bk)
+    # Is given field taken by (White|Black) king?
+    def isWhiteKing(self, col, row):
+        return (col, row) == self.posInt(self.wk)
+
+    def isBlackKing(self, col, row):
+        return (col, row) == self.posInt(self.bk)
     
+    # Is a given position not free?
+    def isNotFree(self, col, row):
+        return self.isWhiteKing(col, row) or self.isBlackKing(col, row)
+
+
     # Fields attacked by white tower
-    def whiteTowerAttacks(self):
+    def whiteTowerAttacksOrMoves(self, isTaken):
 
         attacks = [self.wt]
         col, row = self.posInt(self.wt)
@@ -54,28 +62,28 @@ class onboard():
         r = row - 1
         while r >= 0:
             attacks.append(self.posStr(col, r))
-            if self.isFree(col, r) == False: break
+            if isTaken(col, r): break
             r -= 1  
             
         # Check BOT
         r = row + 1
         while r < 8:
             attacks.append(self.posStr(col, r))
-            if self.isFree(col, r) == False: break
+            if isTaken(col, r): break
             r += 1  
 
         # Check LEFT
         c = col - 1
         while c >= 0:
             attacks.append(self.posStr(c, row))
-            if self.isFree(c, row) == False: break
+            if isTaken(c, row): break
             c -= 1 
 
         # Check RIGHT
         c = col + 1
         while c < 8:
             attacks.append(self.posStr(c, row))
-            if self.isFree(c, row) == False: break
+            if isTaken(c, row): break
             c += 1 
 
         return set(attacks)
@@ -98,15 +106,31 @@ class onboard():
         return set(attacks) & self.board
 
 
+    def attacksWhiteTower(self):
+        """
+        >>> sorted(list(onboard('a5', 'a2', 'e2', 'white').attacksWhiteTower()))
+        ['a1', 'a2', 'a3', 'a4', 'a5', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2']
+        >>> sorted(list(onboard('b3', 'd1', 'b1', 'white').attacksWhiteTower()))
+        ['a1', 'b1', 'c1', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'e1', 'f1', 'g1', 'h1']
+        """
+        return self.whiteTowerAttacksOrMoves(self.isWhiteKing) 
+
+    def movesWhiteTower(self):
+        """
+        >>> sorted(list(onboard('a5', 'a2', 'e2', 'white').movesWhiteTower()))
+        ['a1', 'a2', 'a3', 'a4', 'b2', 'c2', 'd2']
+        """
+        return self.whiteTowerAttacksOrMoves(self.isNotFree) - set([self.wk, self.bk])
+
+
     # Generate next white king move
     def movesWhiteKing(self):
         return self.kingAttacks(self.wk) - self.kingAttacks(self.bk) - set(self.wt)
 
     def movesBlackKing(self):
-        return self.kingAttacks(self.bk) - self.kingAttacks(self.wk) - self.whiteTowerAttacks()
+        return self.kingAttacks(self.bk) - self.kingAttacks(self.wk) - self.attacksWhiteTower()
     
-    def movesWhiteTower(self):
-        return self.whiteTowerAttacks()
+    
 
     def isCheckmate(self):
         """
@@ -123,7 +147,9 @@ class onboard():
         # # print(m)
         # return  m  == set() or m == set([self.wt])
 
-        return (self.bk in self.movesWhiteKing() or self.bk in self.movesWhiteTower()) and self.movesBlackKing() == set()
+        return (self.bk in self.movesWhiteKing() \
+             or self.bk in self.attacksWhiteTower()) \
+             and self.movesBlackKing() == set()
 
     # Based on a current state, returns all possible moves
     def nextMoves(self):
@@ -169,22 +195,18 @@ class onboard():
             depth, prev = self.states[state]
             if depth == 0:
                 break
-            hist.append(prev)
+            hist.append((prev, depth))
             state = prev
             
 
         for h in reversed(hist):
-            wk, wt, bk = h            
+            (wk, wt, bk), depth = h            
             print()
-            print("################")
+            print("########################")
             print()
-            print("♔ = {}  ♖ = {}   ♚ = {}".format(wk, wt, bk))
+            print("♔ = {}  ♖ = {}   ♚ = {}\t\td = {}".format(wk, wt, bk, depth))
             print_board(wk, wt, bk)
             input()
-        
-        state = (self.wk, self.wt, self.bk)
-        depth, _ = self.states[state]
-        print("depth = {}".format(depth))
                       
         
 
