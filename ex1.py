@@ -15,8 +15,7 @@ class onboard():
     
     # Prints the board
     def printb(self):
-        print("Next move:    " + col)
-        print_board(self.wk, self.wt, self.bk, True)
+        print_board(self.wk, self.wt, self.bk)
     
     
     # 2d int position of a figure `s`
@@ -47,7 +46,7 @@ class onboard():
     # Fields attacked by white tower
     def whiteTowerAttacks(self):
 
-        attacks = []
+        attacks = [self.wt]
         col, row = self.posInt(self.wt)
 
         # Check if sth is above the tower
@@ -109,7 +108,7 @@ class onboard():
         return self.whiteTowerAttacks()
 
     def isCheckmate(self):
-        return self.movesBlackKing() == set()
+        return  ( self.movesBlackKing() | set([self.wt]) - self.movesWhiteKing()  )  == set()
 
 
     # Based on a current state, returns all possible moves
@@ -131,21 +130,24 @@ class onboard():
     def play(self):
         q = queue.Queue()
         q.put( (self.wk, self.wt, self.bk) )
-        states = set()
-        print("asd")
-        while q.empty() == False and self.isCheckmate() == False:
-            self.wk, self.wt, self.bk = q.get()
-            print("{} {} {}".format(self.wk, self.wt, self.bk))
 
-            if (self.wk, self.wt, self.bk) in states:
-                print("ups, we've already been here")
-            else:
-                states = states | set([(self.wk, self.wt, self.bk)])
-                for move in self.nextMoves():
-                    # print("added:\t {}".format(move))
+        states = { (self.wk, self.wt, self.bk): 0 }
+        
+        while q.empty() == False and self.isCheckmate() == False:
+
+            self.wk, self.wt, self.bk = q.get()
+            itr = states[self.wk, self.wt, self.bk]
+
+            for move in self.nextMoves():
+                if move not in states:
+                    states[move] = itr + 1
                     q.put(move)
+
         print("{} {} {}".format(self.wk, self.wt, self.bk))
         self.printb()
+        print("glebokosc: {}".format(states[self.wk, self.wt, self.bk]))
+        print()
+        print()
 
                 
             
@@ -169,6 +171,6 @@ if __name__ == '__main__':
             col, wk, wt, bk = line.strip().split(" ")
             OnBoard = onboard(wk, wt, bk, col)
             # OnBoard = onboard( 'a3', 'b8', 'a1', 'white')            
-            OnBoard.printb()
+            # OnBoard.printb()
             OnBoard.play()
             

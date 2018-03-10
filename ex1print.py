@@ -28,7 +28,14 @@ def print_board( wk, wt, bk, debug = False ):
 
 	if debug:
 		board = [ [' '] +  [chr(j+ord('0')) for j in range(8)] ] + board
-	pprint(board)
+
+	# pprint(board)
+
+	for row in board:
+		for col in row:
+			print(col, end = ' ')
+		print()
+
 	#display(HTML(tabulate.tabulate(board, tablefmt='html').replace(
 	#     '<table>', '<table style="border: 2px solid black;">').replace(
 	#     '<td>'   , '<td    style="border: 1px solid black;">')
