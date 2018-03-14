@@ -15,11 +15,12 @@ class nonogram():
         self.nono = np.zeros((rows, cols))      # A board matrix
         self.MAXITER = 5000      # Max. number of iterations of solve()
 
-    def printMe(self):
-        for row in self.nono:
-            for v in row:
-                print("{}".format("#" if v == 1 else "."), end=" ")
-            print()
+    def toFile(self, fname):
+        with open(fname, mode="w") as f:
+            for row in self.nono:
+                for v in row:
+                    print("{}".format("#" if v == 1 else "."), end="", file=f)
+                print(file=f)
 
     def opt_dist(self, row, d):
         return opt_dist(row.tolist(), d)
@@ -93,8 +94,9 @@ class nonogram():
 
 if __name__ == '__main__':
 
-    finput = 'data/ex5e.test'
-    # foutput = 'zad4_output.txt'
+    finput = 'zad5_input.txt'
+    foutput = 'zad5_output.txt'
+
     lines = []
     with open(finput) as f:
         for line in f:
@@ -107,4 +109,4 @@ if __name__ == '__main__':
 
     nono = nonogram(rows, cols, row, col)
     nono.solve()
-    nono.printMe()
+    nono.toFile(foutput)
