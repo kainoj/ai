@@ -40,8 +40,8 @@ class nonogram() :
             if dist > 0:
                 badrows.append(i)
         return badrows
-        # return [(i, ??) for (i, row) in enumerate(self.nono) if self.opt_dist(row, self.row[i]) > 0 ]
-    
+
+
     def scoreColToggled(self, colno, pixno):
         """
         For a given column returns opt_dist(col, d) - opt_dist(col' - d),
@@ -65,67 +65,49 @@ class nonogram() :
                 return False
         return True
 
+    def randDecision(self):
+        return random.randrange(0, 99) < 20
+
     def solve(self):
-        # TODO remove
-        self.MAXITER = 5000
+
         for _ in range(self.MAXITER):
 
             badRows = self.badRows()
             
             if not badRows:
-                print("oł jea nie ma złych")
                 if self.validateCols():
-                    print("ULOZONY")
                     return
                 else:
-                    print("o kurdełe")
                     rowno = random.randrange(0, self.rows)
             else:
                 rowno = random.choice(badRows)
                     
-                
-            
-           
-            
-            if random.randrange(0, 99) < 20:
+            # With probability 1/5 choose a random row
+            if self.randDecision():
                 rowno = random.randrange(0, self.rows)
-                # print("heh, random row ({} - th)".format(rowno))
             
-            colScores = []
-            for c in range(self.cols):
-                score = self.scoreColToggled(c, rowno)
-                # with probability 1/10 add non-optimal element
-                if score > 0 or random.randint(0, 99) < 20:
-                    colScores.append((c, score))
 
-            # print("col scores: ")
-            # print(colScores)
-            # colScores = sorted(colScores, key=lambda x: x[1])
-            
-            colno = random.randrange(0, self.cols-1)
+            colScores = [c for c in range(self.cols) 
+                if self.scoreColToggled(c, rowno) > 0 or self.randDecision()]
 
 
             # choose random column to toggle a pixel
             if not colScores:
                 colno = random.randrange(0, self.cols-1)
             else:
-                colno, _ = random.choice(colScores)
-            # print("toggle  ({}, {})".format(rowno, colno))
+                colno = random.choice(colScores)
+
             # toggle
             self.nono[rowno][colno] = (1 if self.nono[rowno][colno] == 0 else 0)
         
-        self.print()
-        print("eh, ejszcze raz")
         self.solve()
             
 
 
 
-
-
 if __name__ == '__main__':
     
-    finput = 'data/ex5c.test'
+    finput = 'data/ex5e.test'
     # foutput = 'zad4_output.txt'
     lines = []
     with open(finput) as f:
@@ -137,10 +119,7 @@ if __name__ == '__main__':
     row = [int(r) for r in lines[1: rows + 1]]
     col = [int(c) for c in lines[cols + 1:]]
 
-    print("row {}".format(row))
-    print("col {}".format(col))
 
     nono = nonogram(rows, cols, row, col)
-
     nono.solve()
     nono.print()
