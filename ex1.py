@@ -3,6 +3,7 @@ import queue
 
 from ex1print import print_board
 
+
 class onboard():
     
     def __init__(self, wk, wt, bk, col):
@@ -216,17 +217,18 @@ class onboard():
 
 if __name__ == '__main__':
     
-    finput  = 'input_1.1.txt'
-    finput = 'data/ex1.test'
-    # foutput = 'zad4_output.txt'
+    finput  = 'zad1_input.txt'
+    foutput = 'zad1_output.txt'
 
-    # f2 = open(foutput,"w") 
+    # finput = 'data/ex1.test'
+
+    fout = open(foutput,"w") 
 
     with open(finput) as f:
         for line in f:
             # Color, White King, White Tower, Black King
             col, wk, wt, bk = line.strip().split(" ")
             OnBoard = onboard(wk, wt, bk, col)
-            print(OnBoard.play())
+            print(OnBoard.play(), file=fout)
             
             # OnBoard.debug()

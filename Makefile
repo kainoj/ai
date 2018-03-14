@@ -5,6 +5,9 @@ all: test
 test:
 	$(TEST_CMD) *.py
 
+zad1:
+	python validator.py zad1 python3 ex1.py
+
 zad2:
 	python validator.py zad2 python3 ex2.py
 

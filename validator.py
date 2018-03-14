@@ -34,7 +34,7 @@ import sys
 DEFAULT_TESTSET_YAML = u'''
 zad1:
   defaults:
-    timeout: 10 # second
+    timeout: 15 # second
     input_file: zad1_input.txt
     output_file: zad1_output.txt
   validator: whitespace_relaxed_validator
