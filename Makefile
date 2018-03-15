@@ -17,6 +17,9 @@ zad4:
 zad5:
 	python validator.py zad5 python3 ex5.py
 
+zad3:
+	python3 -m doctest ex3.py
+
 clean:
 	rm -f *.pyc
 	rm -rf __pycache__
