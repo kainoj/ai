@@ -19,7 +19,7 @@ def countValues(hand):
             valCntr[val] += 1
         else:
             valCntr[val] = 1
-    return valCntr
+    return valCntr.values()
 
 def isInOrder(hand):
     """
@@ -41,6 +41,8 @@ def isInOrder(hand):
 def colors(hand):
     """
     Number of different colors
+    >>> colors(['9C', '4C', '5D', '6S', '7S'])
+    3
     """
     return len(set([card[1] for card in hand]))
 
@@ -52,14 +54,14 @@ def pair(hand):
     >>> pair(['5S', '5Q', '6S', '7D', '8H'])
     True
     """
-    return 2 in countValues(hand).values()
+    return 2 in countValues(hand)
 
 def twoPairs(hand):
     """
     >>> twoPairs(['5S', '5D', '6S', '6H', '7S'])
     True
     """
-    v = list(countValues(hand).values())
+    v = list(countValues(hand))
     v.sort()
     return len(v) == 3 and v[0] == 1 and v[1] == 2 and v[2] == 2
 
@@ -68,7 +70,7 @@ def three(hand):
     >>> three(['2S', '5D', '6S', '6H', '6S'])
     True
     """
-    return 3 in countValues(hand).values()
+    return 3 in countValues(hand)
 
 def straight(hand):   
     return isInOrder(hand) and colors(hand) > 1
@@ -77,6 +79,10 @@ def flush(hand):
     return isInOrder(hand) == False and colors == 1
 
 def full(hand):
+    """
+    >>> full(['5S', '5D', '6H', '6C', '6S'])
+    True
+    """
     return pair(hand) and three(hand)
 
 def four(hand):
@@ -84,7 +90,7 @@ def four(hand):
     >>> four(['5S', '5D', '5H', '5C', '7S'])
     True
     """
-    return 4 in countValues(hand).values()
+    return 4 in countValues(hand)
 
 def poker(hand):
     return isInOrder(hand) and colors(hand) == 1
@@ -130,7 +136,7 @@ def play(blotHand, figuHand):
 if __name__ == '__main__':
     
 
-    iters = 1000
+    iters = 100000
     blotWins = 0
     for _ in range(iters):
         blotWins += play(randHandBlotkarz(), randHandFigurant())

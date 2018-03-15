@@ -60,7 +60,7 @@ def spacify(txt):
                     dprint("({}, {}, {}) \t{} \t({}) \t{} \t({})".format(x, y,
                            k, txt[x:k], dp[x][k-1], txt[k:y], dp[k][y-1]))
                     if dp[x][k-1] == 0 or dp[k][y-1] == 0:
-                        dprint("mam cie smieciu")
+                        dprint("mam cie")
 
                     elif dp[x][k-1] + dp[k][y-1] > dpk:
                         dpk = dp[x][k-1] + dp[k][y-1]

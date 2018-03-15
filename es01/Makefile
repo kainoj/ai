@@ -19,6 +19,7 @@ zad5:
 
 zad3:
 	python3 -m doctest ex3.py
+	python3 ex3.py
 
 clean:
 	rm -f *.pyc
