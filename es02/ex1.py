@@ -1,14 +1,20 @@
 import numpy as np
 
+import itertools
+
 
 class Nonogram():
 
-    def __init__(self, rows, cols, row, col):
-        self.rows = rows        # Number of rows
-        self.cols = cols        # Number of cols
-        self.row = row          # Rows description
-        self.col = col          # Cols description
+    def __init__(self, rows, cols, row_desc, desc_col):
+        self.r = rows                # Number of rows
+        self.c = cols                # Number of cols
+        self.row_desc = row_desc     # Rows description
+        self.desc_col = desc_col     # Cols description
         self.nono = np.zeros((rows, cols))      # A board matrix
+
+        self.row = [[] for _ in range(rows)]
+        self.col = [[] for _ in range(cols)]
+
         self.MAXITER = 5000      # Max. number of iterations of solve()
 
     def __str__(self):
@@ -18,14 +24,38 @@ class Nonogram():
     def __repr__(self):
         return self.__str__()
 
+    def genPossibleRows(self, row_desc, row_len):
+        
+        if len(row_desc) == 1:
+            zeros = row_len - row_desc[0]
+            return [[0]*i + [1]*row_desc[0] + [0]*(zeros-i) for i in range(zeros+1)]
+
+        limit = row_len - row_desc[-1]
+        ans = []
+        for comb in itertools.combinations(range(limit + 1), len(row_desc)):
+            not_overlapping = True
+            for c in range(len(comb) - 1):
+                if comb[c] + row_desc[c] >= comb[c+1]:
+                    not_overlapping = False
+                    break
+            if not_overlapping:
+                t = [0] * row_len
+                for i, c in enumerate(comb):
+                    for j in range(c, c + row_desc[i]):
+                        t[j] = 1
+                ans.append(t)
+                            
+        return ans
+
     def info(self):
-        print("{} x {}".format(self.rows, self.cols))
-        print("Rows desc: {}".format(self.row))
-        print("Cols desc: {}".format(self.col))
+        print("{} x {}".format(self.r, self.c))
+        print("Rows desc: {}".format(self.row_desc))
+        print("Cols desc: {}".format(self.desc_col))
 
     def transpose(self):
         self.nono = np.transpose(self.nono)
-        self.rows, self.cols = self.cols, self.rows
+        self.r, self.c = self.c, self.r
+        self.row_desc, self.desc_col = self.desc_col, self.row_desc
         self.row, self.col = self.col, self.row
 
     def presolve_row(self):
@@ -35,9 +65,9 @@ class Nonogram():
         >>> nono.__str__() == '..##.\\n...#.'
         True
         """
-        for r in range(self.rows):
-            if len(self.row[r]) == 1 and self.row[r][0] > self.cols / 2:
-                for i in range(self.cols - self.row[r][0], self.row[r][0]):
+        for r in range(self.r):
+            if len(self.row_desc[r]) == 1 and self.row_desc[r][0] > self.c / 2:
+                for i in range(self.c - self.row_desc[r][0], self.row_desc[r][0]):
                     self.nono[r][i] = 1
 
     def presolve(self):
@@ -60,14 +90,14 @@ if __name__ == '__main__':
     with open(finput) as f:
         for line in f:
             lines.append(list(map(int, line.strip('\n').split())))
-    rows = lines[0][0]
-    cols = lines[0][1]
+    r = lines[0][0]
+    c = lines[0][1]
 
-    nono = Nonogram(rows, cols, row=lines[1:rows+1], col=lines[rows+1:])
+    nono = Nonogram(r, c, row_desc=lines[1:r+1], desc_col=lines[r+1:])
 
-    nono.info()
-    nono.presolve()
-    print(nono)
+    # nono.info()
+    # nono.presolve()
+    # print(nono)
 
     # nono = Nonogram(2, 5, [[3], [0]], [[], [], [], [2], []])
     # nono.info()
@@ -76,3 +106,10 @@ if __name__ == '__main__':
     # nono.info()
     # print(nono)
     # nono.presolve()
+
+    x = nono.genPossibleRows([1, 1, 2], 7)
+    print(x)
+
+    # x = nono.genPossibleRowsPerm([1], 5)
+    # print(x)
+
