@@ -27,8 +27,10 @@ class Nonogram():
     def __repr__(self):
         return self.__str__()
 
-    #@lru_cache(maxsize=32)
+    @lru_cache(maxsize=2**20)
     def genPossibleRows(self, row_desc, row_len):
+
+        row_desc = list(row_desc)
         
         if len(row_desc) == 1:
             zeros = row_len - row_desc[0]
@@ -51,14 +53,14 @@ class Nonogram():
                             
         return ans
     
-    #@lru_cache(maxsize=128)
-    def opt_dist(self, row, row_desc, row_len):
+    @lru_cache(maxsize=2**20)
+    def opt_dist_tuples(self, row, row_desc, row_len):
         """
         Given a row and its description computes opt dist...
         """
         a = row  #.tolist()
         mins = []
-        for b in self.genPossibleRows(row_desc, row_len):
+        for b in self.genPossibleRows(tuple(row_desc), row_len):
             n = len(a) + 1
             m = len(b) + 1
             d = np.zeros((n, m), dtype=np.int8)
@@ -75,6 +77,8 @@ class Nonogram():
             mins.append(d[n-1][m-1])
         return min(mins)
 
+    def opt_dist(self, row, row_desc, row_len):
+        return self.opt_dist_tuples(tuple(row), tuple(row_desc), row_len)
 
 
     def info(self):
@@ -105,6 +109,7 @@ class Nonogram():
         self.transpose()
         self.presolve_row()
         self.transpose()
+        
 
     def badRows(self):
         """
@@ -140,7 +145,7 @@ class Nonogram():
         return random.randrange(0, 99) < 20
 
     def solve(self):
-        for _ in range(self.MAXITER):
+        for iterno in range(self.MAXITER):
 
             badRows = self.badRows()
 
@@ -151,7 +156,7 @@ class Nonogram():
                     rowno = random.randrange(0, self.r)
             else:
                 rowno = random.choice(badRows)
-
+                
             # With probability 1/5 choose a random row
             if self.randDecision():
                 rowno = random.randrange(0, self.r)
@@ -169,17 +174,20 @@ class Nonogram():
             # toggle
             self.nono[rowno][colno] = (1 if self.nono[rowno][colno] == 0
                                        else 0)
-
+            
+        # print("dupa")
+        # print(self)
         self.solve()
+        
 
 if __name__ == '__main__':
 
-    finput = 'data/zad1_input.tst'
-    foutput = 'zad1_output.txt'
+    finput = 'zad_input.txt'
+    foutput = 'zad_output.txt'
 
-    finput = 'data/ex01.tst'
+    # finput = 'data/ex01.tst'
 
-    fout = open(foutput, "w")
+    
 
     lines = []
     with open(finput) as f:
@@ -198,13 +206,12 @@ if __name__ == '__main__':
     # nono.info()
     # print(nono)
     # nono.presolve()
-    # nono.info()
-    # print(nono)
-    # nono.presolve()
 
-    # print(nono)
+    nono.presolve()
     nono.solve()
-    print(nono)
+
+    fout = open(foutput, "w")
+    print(nono, file=fout)
 
     # x = nono.genPossibleRows([1, 1, 2], 7)
     # print(x)
