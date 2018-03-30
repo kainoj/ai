@@ -13,12 +13,14 @@ class Nonogram():
         self.c = cols                # Number of cols
         self.row_desc = row_desc     # Rows description
         self.col_desc = col_desc     # Cols description
-        self.nono = np.zeros((rows, cols), dtype=np.int8)      # A board matrix
+        
+        # self.nono = np.zeros((rows, cols), dtype=np.int8)    # A board matrix
+        self.nono = [[0 for c in range(cols)] for r in range(rows)]
 
         # Cache row / cols arragement cache[0] - rows, cache[1] - cols
         self.cache = [[], []] 
 
-        self.MAXITER = rows * cols * 4000  # Max. number of iterations of solve()
+        self.MAXITER = (rows + cols) * 500  # Max. number of iterations of solve()
 
     def __str__(self):
         return '\n'.join([''.join(["#" if v == 1 else "." for v in row])
@@ -69,11 +71,11 @@ class Nonogram():
 
 
         a = row
-        mins = []
+        opt_d = 1000000
         for b in self.cache[what][nmbr]:
             n = len(a) + 1
             m = len(b) + 1
-            d = np.zeros((n, m), dtype=np.int8)
+            d = [[0 for col in range(m)] for row in range(n)]
             for i in range(0, n): d[i][0] = i
             for j in range(0, m): d[0][j] = j
 
@@ -84,8 +86,10 @@ class Nonogram():
                         d[i-1][j-1] + (0 if a[i-1] == b[j-1] else 1),
                         d[i][j-1] + 1
                     )
-            mins.append(d[n-1][m-1])
-        return min(mins)
+            if d[n-1][m-1] < opt_d:
+                opt_d = d[n-1][m-1]
+
+        return opt_d
 
     def opt_dist(self, row, what, nmbr):
         return self.opt_dist_tuple(tuple(row), what, nmbr)
@@ -143,6 +147,9 @@ class Nonogram():
         for i, row in enumerate(self.nono):
             d = self.opt_dist(row, 0, i)
             if d > sco:
+                if sco > 2*self.c/3:
+                    return idx
+
                 sco = d
                 idx = i
 
@@ -157,17 +164,18 @@ class Nonogram():
                         = 0  iff              hasn't changed anything
                         < 0  iff              made the score worse
         """
-        col = np.copy(self.nono[:, colno])
+        col = self.nono[:, colno]
         d = self.opt_dist(col, 1, colno)
         
         col[pixno] = 1 if col[pixno] == 0 else 0
         d2 = self.opt_dist(col, 1, colno)
+        col[pixno] = 1 if col[pixno] == 0 else 0
 
         return d - d2
     
     def validateCols(self):
-        print("O KURDE")
-        print(self)
+        # print("O KURDE")
+        # print(self)
         for c in range(self.c):
             if self.opt_dist(self.nono[:, c].tolist(), 1, c) > 0:
                 return False
@@ -214,8 +222,8 @@ class Nonogram():
             if self.randDecision():
                 self.presolve()
             
-        print("BANNG")
-        print(self)
+        # print("BANNG")
+        # print(self)
         self.nono = np.zeros((self.r, self.c), dtype=np.int8)
         self.presolve()
         self.solve()
