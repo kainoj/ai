@@ -54,13 +54,15 @@ class Nonogram():
         return ans
     
     @lru_cache(maxsize=2**20)
-    def opt_dist_tuples(self, row, row_desc, row_len):
+    def opt_dist_tuples(self, row, row_desc, row_len, what, nmbr):
         """
         Given a row and its description computes opt dist...
+        what = 0 iff given nono's row
+             = 1 iff given nono's col
         """
-        a = row  #.tolist()
+        a = row
         mins = []
-        for b in self.genPossibleRows(tuple(row_desc), row_len):
+        for b in self.cache[what][nmbr]:
             n = len(a) + 1
             m = len(b) + 1
             d = np.zeros((n, m), dtype=np.int8)
@@ -77,8 +79,8 @@ class Nonogram():
             mins.append(d[n-1][m-1])
         return min(mins)
 
-    def opt_dist(self, row, row_desc, row_len):
-        return self.opt_dist_tuples(tuple(row), tuple(row_desc), row_len)
+    def opt_dist(self, row, row_desc, row_len, what, nmbr):
+        return self.opt_dist_tuples(tuple(row), tuple(row_desc), row_len, what, nmbr)
 
 
     def info(self):
@@ -127,7 +129,7 @@ class Nonogram():
         Return indicies of incorrect rows
         """
         return [i for i, row in enumerate(self.nono)
-                if self.opt_dist(row, self.row_desc[i], self.c) > 0] 
+                if self.opt_dist(row, self.row_desc[i], self.c, 0, i) > 0] 
     
     def scoreColToggled(self, colno, pixno):
         """
@@ -139,16 +141,16 @@ class Nonogram():
                         < 0  iff              made the score worse
         """
         col = np.copy(self.nono[:, colno])
-        d = self.opt_dist(col, self.col_desc[colno], self.r)
+        d = self.opt_dist(col, self.col_desc[colno], self.r, 1, colno)
 
         col[pixno] = 1 if col[pixno] == 0 else 0
-        d2 = self.opt_dist(col, self.col_desc[colno], self.r)
+        d2 = self.opt_dist(col, self.col_desc[colno], self.r, 1, colno)
 
         return d - d2
     
     def validateCols(self):
         for c in range(self.c):
-            if self.opt_dist(self.nono[:, c].tolist(), self.col_desc[c], self.r) > 0:
+            if self.opt_dist(self.nono[:, c].tolist(), self.col_desc[c], self.r, 1, c) > 0:
                 return False
         return True
     
@@ -196,7 +198,7 @@ if __name__ == '__main__':
     finput = 'zad_input.txt'
     foutput = 'zad_output.txt'
 
-    finput = 'data/zad1_input.tst'
+    finput = 'data/ex01_cat.tst'
    
 
     lines = []
@@ -219,7 +221,8 @@ if __name__ == '__main__':
     #     print(r)
     #     print("----")
     # nono.presolve()
-    # nono.solve()
+    nono.solve()
+    print(nono)
 
 
     # fout = open(foutput, "w")
