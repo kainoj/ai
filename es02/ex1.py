@@ -166,61 +166,54 @@ class Nonogram():
         return d - d2
     
     def validateCols(self):
+        print("O KURDE")
+        print(self)
         for c in range(self.c):
             if self.opt_dist(self.nono[:, c].tolist(), 1, c) > 0:
                 return False
         return True
     
     def randDecision(self):
-        return random.randrange(0, 99) < 15
+        return random.randrange(0, 99) < 20
+
+    def chooseCol(self, rowno):
+        colScores = 0
+        colno = -1
+
+        for c in range(self.c):
+            score = self.scoreColToggled(c, rowno)
+            if score > colScores:
+                colno = c
+                colScores = score
+        return colno
+
 
     def solve(self):
         for iterno in range(self.MAXITER):
 
             rowno = self.badRows()
-            #print("bad rows {}".format(badRows))
 
-            if rowno == -1:
-                if self.validateCols():
-                    print("iteracji: {}".format(iterno))
-                    return
-                else:
-                    rowno = random.randrange(0, self.r)
-                #print("RAAANDOM\n")        
+            if rowno == -1 and self.validateCols():
+                print("iteracji: {}".format(iterno))
+                return
             
-                
             # With probability x/5 choose a random row
-            if self.randDecision():
+            if rowno == - 1 or self.randDecision():
                 rowno = random.randrange(0, self.r)
 
-            colScores = []
-            for c in range(self.c):
-                score = self.scoreColToggled(c, rowno)
-                if self.scoreColToggled(c, rowno) > 0 or self.randDecision():
-                    colScores.append((c, score))
-            
-            #print("col scofre  = {}".format(colScores))
 
-            # colScores = [c for c in range(self.c)
-            #              if self.scoreColToggled(c, rowno) > 0
-            #              or self.randDecision()]
+            colno = self.chooseCol(rowno)
 
             # Choose random column to toggle a pixel
-            if not colScores:
-                colno = random.randrange(0, self.c-1)
-            else:
-                colno, _ =  sorted(colScores, key=lambda tup: tup[1])[-1]
-                #print("chosen column: {}".format(colno))
-
+            if colno == -1 or self.randDecision():
+                colno = random.randrange(0, self.c)
+    
             # toggle
             self.nono[rowno][colno] = (1 if self.nono[rowno][colno] == 0 else 0)
             
             if self.randDecision():
                 self.presolve()
             
-            # print(self)
-            # print()
-            # input()
         print("BANNG")
         print(self)
         self.nono = np.zeros((self.r, self.c), dtype=np.int8)
@@ -233,7 +226,7 @@ if __name__ == '__main__':
     finput = 'zad_input.txt'
     foutput = 'zad_output.txt'
 
-    finput = 'data/ex01_man.tst'
+    finput = 'data/ex01_heart.tst'
    
 
     lines = []
