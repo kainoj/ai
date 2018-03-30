@@ -17,10 +17,13 @@ class Nonogram():
         # self.nono = np.zeros((rows, cols), dtype=np.int8)    # A board matrix
         self.nono = [[0 for c in range(cols)] for r in range(rows)]
 
+        self.MAXITER = (rows + cols) * 500  # Max. number of iterations of solve()
+
         # Cache row / cols arragement cache[0] - rows, cache[1] - cols
         self.cache = [[], []] 
+        self.presolveCache()
 
-        self.MAXITER = (rows + cols) * 500  # Max. number of iterations of solve()
+        self.resets = 0
 
     def __str__(self):
         return '\n'.join([''.join(["#" if v == 1 else "." for v in row])
@@ -55,7 +58,7 @@ class Nonogram():
         return ans
     
     @lru_cache(maxsize=2**20)
-    def opt_dist_tuple(self, row, what, nmbr):
+    def opt_dist(self, row, what, nmbr):
         """
         Given a row and its description computes opt dist...
         what = 0 iff given nono's row
@@ -68,11 +71,11 @@ class Nonogram():
             row_desc = self.col_desc[nmbr]
             row_len = self.r
 
-
         a = row
+        n = len(a) + 1
         opt_d = 1000000
+
         for b in self.cache[what][nmbr]:
-            n = len(a) + 1
             m = len(b) + 1
             d = [[0 for col in range(m)] for row in range(n)]
             for i in range(0, n): d[i][0] = i
@@ -90,20 +93,12 @@ class Nonogram():
 
         return opt_d
 
-    def opt_dist(self, row, what, nmbr):
-        return self.opt_dist_tuple(tuple(row), what, nmbr)
-
 
     def info(self):
         print("{} x {}".format(self.r, self.c))
         print("Rows desc: {}".format(self.row_desc))
         print("Cols desc: {}".format(self.col_desc))
 
-    # def transpose(self):
-    #     self.nono = np.transpose(self.nono)
-    #     self.r, self.c = self.c, self.r
-    #     self.row_desc, self.col_desc = self.col_desc, self.row_desc
-    #     # self.row, self.col = self.col, self.row
 
     def presolve_row(self):
         for r in range(self.r):
@@ -111,12 +106,7 @@ class Nonogram():
                 for i in range(self.c - self.row_desc[r][0], self.row_desc[r][0]):
                     self.nono[r][i] = 1
 
-    def presolve(self):
-        self.presolve_row()
-        # self.transpose()
-        # self.presolve_row()
-        # self.transpose()
-        
+
     def presolveCache(self):
         """ 
         For each row (cache[0]) and col (chache[1]) description retrun cache 
@@ -138,11 +128,10 @@ class Nonogram():
         sco = 0
 
         for i, row in enumerate(self.nono):
-            d = self.opt_dist(row, 0, i)
+            d = self.opt_dist(tuple(row), 0, i)
             if d > sco:
-                if sco > 2*self.c/3:
+                if sco > 2: # > self.c/4:
                     return idx
-
                 sco = d
                 idx = i
 
@@ -160,17 +149,17 @@ class Nonogram():
         # get column
         # col = self.nono[:, colno]
         col = [row[colno] for row in self.nono]
-        d = self.opt_dist(col, 1, colno)
+        d = self.opt_dist(tuple(col), 1, colno)
         
         col[pixno] = 1 if col[pixno] == 0 else 0
-        d2 = self.opt_dist(col, 1, colno)
+        d2 = self.opt_dist(tuple(col), 1, colno)
         col[pixno] = 1 if col[pixno] == 0 else 0
 
         return d - d2
     
     def validateCols(self):
         for c in range(self.c):
-            if self.opt_dist([row[c] for row in self.nono], 1, c) > 0:
+            if self.opt_dist(tuple([row[c] for row in self.nono]), 1, c) > 0:
                 return False
         return True
     
@@ -195,12 +184,11 @@ class Nonogram():
             rowno = self.badRows()
 
             if rowno == -1 and self.validateCols():
+                print("\niters: {}\t({} resets)".format(iterno, self.resets))
                 return
             
-            # With probability x/5 choose a random row
-            if rowno == - 1 or self.randDecision():
+            if rowno == - 1: # or: self.randDecision():
                 rowno = random.randrange(0, self.r)
-
 
             colno = self.chooseCol(rowno)
 
@@ -211,12 +199,9 @@ class Nonogram():
             # toggle
             self.nono[rowno][colno] = (1 if self.nono[rowno][colno] == 0 else 0)
             
-            if self.randDecision():
-                self.presolve()
-            
-        # self.nono = np.zeros((self.r, self.c), dtype=np.int8)
         self.nono = [[0 for c in range(self.c)] for r in range(self.r)]
-        self.presolve()
+        self.presolve_row()
+        self.resets += 1
         self.solve()
         
 
@@ -238,11 +223,8 @@ if __name__ == '__main__':
     nono = Nonogram(r, c, row_desc=lines[1:r+1], col_desc=lines[r+1:])
 
     # nono.info()
-    nono.presolveCache()
-    nono.presolve() 
-
+    nono.presolve_row() 
     nono.solve()
-    # print(nono)
 
     fout = open(foutput, "w")
     print(nono, file=fout)
