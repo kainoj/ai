@@ -1,4 +1,4 @@
-import numpy as np
+# import numpy as np
 
 import itertools
 import random
@@ -29,7 +29,6 @@ class Nonogram():
     def __repr__(self):
         return self.__str__()
 
-    # @lru_cache(maxsize=2**20)
     def genPossibleRows(self, row_desc, row_len):
 
         row_desc = list(row_desc)
@@ -100,19 +99,13 @@ class Nonogram():
         print("Rows desc: {}".format(self.row_desc))
         print("Cols desc: {}".format(self.col_desc))
 
-    def transpose(self):
-        self.nono = np.transpose(self.nono)
-        self.r, self.c = self.c, self.r
-        self.row_desc, self.col_desc = self.col_desc, self.row_desc
-        # self.row, self.col = self.col, self.row
+    # def transpose(self):
+    #     self.nono = np.transpose(self.nono)
+    #     self.r, self.c = self.c, self.r
+    #     self.row_desc, self.col_desc = self.col_desc, self.row_desc
+    #     # self.row, self.col = self.col, self.row
 
     def presolve_row(self):
-        """
-        >>> nono = Nonogram(2, 5, [[3], [0]], [[], [], [], [2], []])
-        >>> nono.presolve()
-        >>> nono.__str__() == '..##.\\n...#.'
-        True
-        """
         for r in range(self.r):
             if len(self.row_desc[r]) == 1 and self.row_desc[r][0] > self.c / 2:
                 for i in range(self.c - self.row_desc[r][0], self.row_desc[r][0]):
@@ -120,9 +113,9 @@ class Nonogram():
 
     def presolve(self):
         self.presolve_row()
-        self.transpose()
-        self.presolve_row()
-        self.transpose()
+        # self.transpose()
+        # self.presolve_row()
+        # self.transpose()
         
     def presolveCache(self):
         """ 
@@ -164,7 +157,9 @@ class Nonogram():
                         = 0  iff              hasn't changed anything
                         < 0  iff              made the score worse
         """
-        col = self.nono[:, colno]
+        # get column
+        # col = self.nono[:, colno]
+        col = [row[colno] for row in self.nono]
         d = self.opt_dist(col, 1, colno)
         
         col[pixno] = 1 if col[pixno] == 0 else 0
@@ -174,10 +169,8 @@ class Nonogram():
         return d - d2
     
     def validateCols(self):
-        # print("O KURDE")
-        # print(self)
         for c in range(self.c):
-            if self.opt_dist(self.nono[:, c].tolist(), 1, c) > 0:
+            if self.opt_dist([row[c] for row in self.nono], 1, c) > 0:
                 return False
         return True
     
@@ -202,7 +195,6 @@ class Nonogram():
             rowno = self.badRows()
 
             if rowno == -1 and self.validateCols():
-                print("iteracji: {}".format(iterno))
                 return
             
             # With probability x/5 choose a random row
@@ -222,9 +214,8 @@ class Nonogram():
             if self.randDecision():
                 self.presolve()
             
-        # print("BANNG")
-        # print(self)
-        self.nono = np.zeros((self.r, self.c), dtype=np.int8)
+        # self.nono = np.zeros((self.r, self.c), dtype=np.int8)
+        self.nono = [[0 for c in range(self.c)] for r in range(self.r)]
         self.presolve()
         self.solve()
         
@@ -234,8 +225,7 @@ if __name__ == '__main__':
     finput = 'zad_input.txt'
     foutput = 'zad_output.txt'
 
-    finput = 'data/ex01_heart.tst'
-   
+    # finput = 'data/ex01_man.tst'
 
     lines = []
     with open(finput) as f:
@@ -247,20 +237,12 @@ if __name__ == '__main__':
 
     nono = Nonogram(r, c, row_desc=lines[1:r+1], col_desc=lines[r+1:])
 
-    nono.info()
-
-    print("prechaching...")
+    # nono.info()
     nono.presolveCache()
-    print("done")
-
-    # for r in nono.cache:
-    #     print(r)
-    #     print("----")
     nono.presolve() 
-    print(nono)
+
     nono.solve()
-    print(nono)
+    # print(nono)
 
-
-    # fout = open(foutput, "w")
-    # print(nono, file=fout)
+    fout = open(foutput, "w")
+    print(nono, file=fout)
