@@ -15,10 +15,10 @@ class Nonogram():
         self.col_desc = col_desc     # Cols description
         self.nono = np.zeros((rows, cols), dtype=np.int8)      # A board matrix
 
-        # self.row = [[] for _ in range(rows)]
-        # self.col = [[] for _ in range(cols)]
+        # Cache row / cols arragement cache[0] - rows, cache[1] - cols
+        self.cache = [[], []] 
 
-        self.MAXITER = 5000      # Max. number of iterations of solve()
+        self.MAXITER = 20000      # Max. number of iterations of solve()
 
     def __str__(self):
         return '\n'.join([''.join(["#" if v == 1 else "." for v in row])
@@ -27,7 +27,7 @@ class Nonogram():
     def __repr__(self):
         return self.__str__()
 
-    @lru_cache(maxsize=2**20)
+    # @lru_cache(maxsize=2**20)
     def genPossibleRows(self, row_desc, row_len):
 
         row_desc = list(row_desc)
@@ -110,6 +110,17 @@ class Nonogram():
         self.presolve_row()
         self.transpose()
         
+    def presolveCache(self):
+        """ 
+        For each row (cache[0]) and col (chache[1]) description retrun cache 
+        list of possible row (cols) arrangement
+        """
+        self.cache[0] = [self.genPossibleRows(row, self.c) 
+                            for row in self.row_desc]
+        
+        self.cache[1] = [self.genPossibleRows(col, self.r)
+                            for col in self.col_desc]
+                    
 
     def badRows(self):
         """
@@ -175,8 +186,8 @@ class Nonogram():
             self.nono[rowno][colno] = (1 if self.nono[rowno][colno] == 0
                                        else 0)
             
-        # print("dupa")
-        # print(self)
+        print(self)
+            # input()
         self.solve()
         
 
@@ -185,37 +196,31 @@ if __name__ == '__main__':
     finput = 'zad_input.txt'
     foutput = 'zad_output.txt'
 
-    # finput = 'data/ex01.tst'
-
-    
+    finput = 'data/zad1_input.tst'
+   
 
     lines = []
     with open(finput) as f:
         for line in f:
             lines.append(list(map(int, line.strip('\n').split())))
+
     r = lines[0][0]
     c = lines[0][1]
 
     nono = Nonogram(r, c, row_desc=lines[1:r+1], col_desc=lines[r+1:])
 
-    # nono.info()
+    nono.info()
+
+    print("prechaching...")
+    nono.presolveCache()
+    print("dine")
+
+    # for r in nono.cache:
+    #     print(r)
+    #     print("----")
     # nono.presolve()
-    # print(nono)
+    # nono.solve()
 
-    # nono = Nonogram(2, 5, [[3], [0]], [[], [], [], [2], []])
-    # nono.info()
-    # print(nono)
-    # nono.presolve()
 
-    nono.presolve()
-    nono.solve()
-
-    fout = open(foutput, "w")
-    print(nono, file=fout)
-
-    # x = nono.genPossibleRows([1, 1, 2], 7)
-    # print(x)
-
-    # x = nono.genPossibleRowsPerm([1], 5)
-    # print(x)
-
+    # fout = open(foutput, "w")
+    # print(nono, file=fout)
