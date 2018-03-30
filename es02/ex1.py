@@ -18,7 +18,7 @@ class Nonogram():
         # Cache row / cols arragement cache[0] - rows, cache[1] - cols
         self.cache = [[], []] 
 
-        self.MAXITER = rows * cols * 30  # Max. number of iterations of solve()
+        self.MAXITER = rows * cols * 4000  # Max. number of iterations of solve()
 
     def __str__(self):
         return '\n'.join([''.join(["#" if v == 1 else "." for v in row])
@@ -134,10 +134,19 @@ class Nonogram():
 
     def badRows(self):
         """
-        Return indicies of incorrect rows
+        Return index of a row that is the most closest to optimal row (d > 0)
+        If no such row exists, returns -1
         """
-        return [i for i, row in enumerate(self.nono)
-                if self.opt_dist(row, 0, i) > 0] 
+        idx = -1
+        sco = 0
+
+        for i, row in enumerate(self.nono):
+            d = self.opt_dist(row, 0, i)
+            if d > sco:
+                sco = d
+                idx = i
+
+        return idx
     
     def scoreColToggled(self, colno, pixno):
         """
@@ -150,7 +159,7 @@ class Nonogram():
         """
         col = np.copy(self.nono[:, colno])
         d = self.opt_dist(col, 1, colno)
-
+        
         col[pixno] = 1 if col[pixno] == 0 else 0
         d2 = self.opt_dist(col, 1, colno)
 
@@ -163,41 +172,59 @@ class Nonogram():
         return True
     
     def randDecision(self):
-        return random.randrange(0, 99) < 20
+        return random.randrange(0, 99) < 15
 
     def solve(self):
         for iterno in range(self.MAXITER):
 
-            badRows = self.badRows()
+            rowno = self.badRows()
+            #print("bad rows {}".format(badRows))
 
-            if not badRows:
+            if rowno == -1:
                 if self.validateCols():
+                    print("iteracji: {}".format(iterno))
                     return
                 else:
                     rowno = random.randrange(0, self.r)
-            else:
-                rowno = random.choice(badRows)
+                #print("RAAANDOM\n")        
+            
                 
-            # With probability 1/5 choose a random row
+            # With probability x/5 choose a random row
             if self.randDecision():
                 rowno = random.randrange(0, self.r)
 
-            colScores = [c for c in range(self.c)
-                         if self.scoreColToggled(c, rowno) > 0
-                         or self.randDecision()]
+            colScores = []
+            for c in range(self.c):
+                score = self.scoreColToggled(c, rowno)
+                if self.scoreColToggled(c, rowno) > 0 or self.randDecision():
+                    colScores.append((c, score))
+            
+            #print("col scofre  = {}".format(colScores))
+
+            # colScores = [c for c in range(self.c)
+            #              if self.scoreColToggled(c, rowno) > 0
+            #              or self.randDecision()]
 
             # Choose random column to toggle a pixel
             if not colScores:
                 colno = random.randrange(0, self.c-1)
             else:
-                colno = random.choice(colScores)
+                colno, _ =  sorted(colScores, key=lambda tup: tup[1])[-1]
+                #print("chosen column: {}".format(colno))
 
             # toggle
-            self.nono[rowno][colno] = (1 if self.nono[rowno][colno] == 0
-                                       else 0)
+            self.nono[rowno][colno] = (1 if self.nono[rowno][colno] == 0 else 0)
+            
+            if self.randDecision():
+                self.presolve()
             
             # print(self)
+            # print()
             # input()
+        print("BANNG")
+        print(self)
+        self.nono = np.zeros((self.r, self.c), dtype=np.int8)
+        self.presolve()
         self.solve()
         
 
@@ -229,6 +256,7 @@ if __name__ == '__main__':
     #     print(r)
     #     print("----")
     nono.presolve() 
+    print(nono)
     nono.solve()
     print(nono)
 
