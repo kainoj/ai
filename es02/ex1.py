@@ -18,7 +18,7 @@ class Nonogram():
         # Cache row / cols arragement cache[0] - rows, cache[1] - cols
         self.cache = [[], []] 
 
-        self.MAXITER = 20000      # Max. number of iterations of solve()
+        self.MAXITER = rows * cols * 30  # Max. number of iterations of solve()
 
     def __str__(self):
         return '\n'.join([''.join(["#" if v == 1 else "." for v in row])
@@ -54,12 +54,20 @@ class Nonogram():
         return ans
     
     @lru_cache(maxsize=2**20)
-    def opt_dist_tuples(self, row, row_desc, row_len, what, nmbr):
+    def opt_dist_tuple(self, row, what, nmbr):
         """
         Given a row and its description computes opt dist...
         what = 0 iff given nono's row
              = 1 iff given nono's col
         """
+        if what == 0:
+            row_desc = self.row_desc[nmbr]
+            row_len = self.c
+        elif what == 1:
+            row_desc = self.col_desc[nmbr]
+            row_len = self.r
+
+
         a = row
         mins = []
         for b in self.cache[what][nmbr]:
@@ -79,8 +87,8 @@ class Nonogram():
             mins.append(d[n-1][m-1])
         return min(mins)
 
-    def opt_dist(self, row, row_desc, row_len, what, nmbr):
-        return self.opt_dist_tuples(tuple(row), tuple(row_desc), row_len, what, nmbr)
+    def opt_dist(self, row, what, nmbr):
+        return self.opt_dist_tuple(tuple(row), what, nmbr)
 
 
     def info(self):
@@ -129,7 +137,7 @@ class Nonogram():
         Return indicies of incorrect rows
         """
         return [i for i, row in enumerate(self.nono)
-                if self.opt_dist(row, self.row_desc[i], self.c, 0, i) > 0] 
+                if self.opt_dist(row, 0, i) > 0] 
     
     def scoreColToggled(self, colno, pixno):
         """
@@ -141,16 +149,16 @@ class Nonogram():
                         < 0  iff              made the score worse
         """
         col = np.copy(self.nono[:, colno])
-        d = self.opt_dist(col, self.col_desc[colno], self.r, 1, colno)
+        d = self.opt_dist(col, 1, colno)
 
         col[pixno] = 1 if col[pixno] == 0 else 0
-        d2 = self.opt_dist(col, self.col_desc[colno], self.r, 1, colno)
+        d2 = self.opt_dist(col, 1, colno)
 
         return d - d2
     
     def validateCols(self):
         for c in range(self.c):
-            if self.opt_dist(self.nono[:, c].tolist(), self.col_desc[c], self.r, 1, c) > 0:
+            if self.opt_dist(self.nono[:, c].tolist(), 1, c) > 0:
                 return False
         return True
     
@@ -188,7 +196,7 @@ class Nonogram():
             self.nono[rowno][colno] = (1 if self.nono[rowno][colno] == 0
                                        else 0)
             
-        print(self)
+            # print(self)
             # input()
         self.solve()
         
@@ -198,7 +206,7 @@ if __name__ == '__main__':
     finput = 'zad_input.txt'
     foutput = 'zad_output.txt'
 
-    finput = 'data/ex01_cat.tst'
+    finput = 'data/ex01_man.tst'
    
 
     lines = []
@@ -215,12 +223,12 @@ if __name__ == '__main__':
 
     print("prechaching...")
     nono.presolveCache()
-    print("dine")
+    print("done")
 
     # for r in nono.cache:
     #     print(r)
     #     print("----")
-    # nono.presolve()
+    nono.presolve() 
     nono.solve()
     print(nono)
 
