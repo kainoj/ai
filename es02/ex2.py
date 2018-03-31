@@ -22,6 +22,15 @@ Stan - mapa globalnie + lista pudełek                       ← this one
     pros: memory
     cons: ain't easy: gen + render
 '''
+class SokoState:
+    def __init__(self, keeper, boxes):
+        self.keeper = keeper
+        self.boxes = boxes
+    
+    def __str__(self):
+        return "STATE: Keeper {}, boxes {}".format(self.keeper, sorted(self.boxes))
+    def __repr__(self):
+        return self.__str__()
 
 class Sokoban:
 
@@ -102,24 +111,21 @@ class Sokoban:
         return xy[0] + self.DIR[move][0], xy[1] + self.DIR[move][1]
 
 
-    def genMoves(self):
+    def genStates(self):
         
         for move in self.MOVES:
             # A field next to the keeper
             neigh = self.neighbour(self.keeper, move)
-            print("neigh = {}".format(neigh))
-            print("Checking: {} ({})".format(move, neigh))
 
             if self.isFree(neigh):
                 # A filed towards move is FREE - let's move
-                print("\tOh yea I can move to {} towards {}".format(neigh, move))
+                yield SokoState(neigh, self.boxes)
             elif self.isBox(neigh):
                 # The neighbour towards move is a BOX - check if it's free
                 # Check if neighbour of a box is a free field
                 neigh2 = self.neighbour(neigh, move)
                 if self.isFree(neigh2):
-                    print("\tOh yea I can move BOX to {} towards {}".format(neigh2, move))
-            print()
+                    yield SokoState(neigh, self.boxes - set([neigh] ) | set([neigh2]))
     
     def play(self):
         print("TODO")
@@ -140,4 +146,5 @@ if __name__ == '__main__':
     
     print(soko)
     soko.info()
-    soko.genMoves()
+    for m in soko.genStates():
+        print(m)
