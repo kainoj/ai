@@ -165,8 +165,12 @@ class Sokoban:
                 if s not in visited:
                     q.put(s)
                     visited = visited | set([s])
-        print(s)     
-        print("TODO traceback")
+
+        ans = []
+        while state.depth > 0:
+            ans.append(state.dir)
+            state = state.prev
+        return ''.join(reversed(ans))
 
 if __name__ == '__main__':
 
@@ -182,6 +186,10 @@ if __name__ == '__main__':
 
     soko = Sokoban(board)
     
-    print(soko)
-    soko.info()
-    soko.play()
+    # print(soko)
+    # soko.info()
+    ans = soko.play()
+
+    fout = open(foutput,"w")
+    print(ans, file=fout)
+

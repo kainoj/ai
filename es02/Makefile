@@ -5,3 +5,6 @@ clean:
 ex1:
 	python3 -m doctest ex1.py
 	python validator.py zad1 python3 ex1.py	
+
+ex2:
+	python validator.py zad2 python3 ex2.py
