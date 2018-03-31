@@ -189,9 +189,28 @@ class Sokoban:
     
         return self.traceback(state)
 
-    def h(self, state):
-        # TODO
-        return sum([abs(a[0] - b[0]) + abs(a[1] - b[1])for a, b in zip(sorted(state.boxes), sorted(self.goals))])
+    def f(self, state):
+        min_box_dist = 100000
+        closest_box = None
+        keeper = state.keeper
+
+        # Distance from keeper to closest box
+        for box in state.boxes:
+            # Distance: keeper → a box
+            keeper_box = abs(box[0] - keeper[0]) + abs(box[1] - keeper[1])
+                
+            # Distance: the box → the closest goal
+            min_goal_dist = 10000
+            for goal in self.goals:
+                d = abs(box[0] - goal[0]) + abs(box[1] - goal[1])
+                if d < min_goal_dist:
+                    min_goal_dist = d
+            
+            keeper_box += min_goal_dist
+            if keeper_box < min_box_dist:
+                min_box_dist = keeper_box
+
+        return min_box_dist + state.depth
 
 
     def playAstar(self):
@@ -199,7 +218,7 @@ class Sokoban:
         state = self.state        
         hq = []
   
-        state.h = self.h(state)
+        state.h = self.f(state)
         heapq.heappush(hq, state)
 
         visited = set([state])
@@ -208,7 +227,7 @@ class Sokoban:
             state = heapq.heappop(hq)
             for s in self.genStates(state):
                 if s not in visited:
-                    s.h = self.h(s)
+                    s.h = self.f(s)
                     heapq.heappush(hq, s)
                     visited = visited | set([s])
     
@@ -233,7 +252,6 @@ if __name__ == '__main__':
     # soko.info()
     
     ans = soko.playAstar()
-    print(ans)
     fout = open(foutput,"w")
     print(ans, file=fout)
 
