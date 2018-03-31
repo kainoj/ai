@@ -1,27 +1,12 @@
 import queue
 import sys
 
-"""
-.   puste pole, 
-W   ścianę, 
-K   magazyniera, 
-B   skrzynkę, 
-G   pole docelowe, 
-*   skrzynkę na polu docelowym 
-+   magazyniera stojącego na polu docelowym
-"""
-
 '''
-Stan - mapa, na której zaznaczone są boxy i worker
-    pros: easy state generation, easy rendering
-    cons: memory
-
-vs
-
 Stan - mapa globalnie + lista pudełek                       ← this one
     pros: memory
     cons: ain't easy: gen + render
 '''
+
 class SokoState:
     def __init__(self, keeper, boxes, dire = "B", prevState = None):
         self.keeper = keeper
@@ -53,6 +38,9 @@ class Sokoban:
         
         self.n, self.m = len(board), len(board[0])
 
+        # Exclude `goals` from corners
+        self.corners = self.precomputeCorners() - self.goals
+        
     
     def stripBoard(self, board):
         """
@@ -85,7 +73,29 @@ class Sokoban:
                     goals.append((i, j))
                     keeper = (i, j)
                     board[i][j] = '.'
+
         return board, set(goals), SokoState(keeper, set(boxes))
+    
+    def precomputeCorners(self):
+        """
+        For a given board return a set of a free fields which are corrners 
+        (are '.' and are surrounded by 3x 'W')
+        """
+        b = self.board
+        corners = []
+        for i in range(1, self.n - 1):
+            for j in range(1, self.m - 1):
+                if board[i][j] == '.':
+                    tl, tt, tr = b[i-1][j-1], b[i-1][j], b[i-1][j+1]
+                    ml,     mr = b[i][j-1],              b[i][j+1]
+                    bl, bb, br = b[i+1][j-1], b[i+1][j], b[i+1][j+1]
+                    LU = (ml == "W" and tl == "W" and tt == "W")
+                    RU = (tt == "W" and tr == "W" and mr == "W")
+                    LB = (ml == "W" and bl == "W" and bb == "W")
+                    RB = (bb == "W" and br == "W" and mr == "W")
+                    if LU or RU or LB or RB:
+                        corners.append((i,j))
+        return set(corners)
 
     def sokoToStr(self, state):
         # Copy the list
@@ -128,29 +138,35 @@ class Sokoban:
         Neighbour of (x,y) towards `move`
         """
         return xy[0] + self.DIR[move][0], xy[1] + self.DIR[move][1]
-
+    
 
     def genStates(self, state):
         
         for move in self.MOVES:
             # A field next to the keeper
             neigh = self.neighbour(state.keeper, move)
-
+            
+            # A filed towards move is FREE - let's move
             if self.isFree(neigh, state):
-                # A filed towards move is FREE - let's move
                 yield SokoState(neigh, state.boxes, move, state)
 
+            # The neighbour is a BOX - check if its neigbour free
             elif self.isBox(neigh, state):
-                # The neighbour towards move is a BOX - check if it's free
-                # Check if neighbour of a box is a free field
                 neigh2 = self.neighbour(neigh, move)
-                if self.isFree(neigh2, state):
+                if self.isFree(neigh2, state) and neigh2 not in self.corners:
                     yield SokoState(neigh, 
                                     state.boxes - set([neigh] ) | set([neigh2]), 
                                     move, state)
     
     def isSolved(self, state):
         return state.boxes == self.goals
+
+    def traceback(self, state):
+        ans = []
+        while state.depth > 0:
+            ans.append(state.dir)
+            state = state.prev
+        return ''.join(reversed(ans))
 
     def play(self):
         state = self.state        
@@ -165,12 +181,8 @@ class Sokoban:
                 if s not in visited:
                     q.put(s)
                     visited = visited | set([s])
-
-        ans = []
-        while state.depth > 0:
-            ans.append(state.dir)
-            state = state.prev
-        return ''.join(reversed(ans))
+    
+        return self.traceback(state)
 
 if __name__ == '__main__':
 
@@ -186,8 +198,8 @@ if __name__ == '__main__':
 
     soko = Sokoban(board)
     
-    # print(soko)
-    # soko.info()
+    print(soko)
+    soko.info()
     ans = soko.play()
 
     fout = open(foutput,"w")
