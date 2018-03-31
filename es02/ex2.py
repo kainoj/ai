@@ -1,4 +1,5 @@
 import queue
+import heapq
 import sys
 
 '''
@@ -8,12 +9,13 @@ Stan - mapa globalnie + lista pudełek                       ← this one
 '''
 
 class SokoState:
-    def __init__(self, keeper, boxes, dire = "B", prevState = None):
+    def __init__(self, keeper, boxes, dire = "B", prevState = None, h = 0):
         self.keeper = keeper
         self.boxes = boxes
         self.dir = dire 
         self.depth = 0 if prevState is None else prevState.depth + 1
         self.prev = prevState
+        self.h = 42
         
     def __str__(self):
         return "STATE: Keeper {}, boxes {}\tcame from: {}".format(self.keeper, sorted(self.boxes), self.dir)
@@ -26,6 +28,9 @@ class SokoState:
     
     def __eq__(self, other):
         return self.keeper == other.keeper and self.boxes == other.boxes
+    
+    def __lt__(self, other):
+        return self.h < other.h
 
 class Sokoban:
 
@@ -168,7 +173,7 @@ class Sokoban:
             state = state.prev
         return ''.join(reversed(ans))
 
-    def play(self):
+    def playBFS(self):
         state = self.state        
         q = queue.Queue()
         q.put(state)
@@ -183,6 +188,32 @@ class Sokoban:
                     visited = visited | set([s])
     
         return self.traceback(state)
+
+    def h(self, state):
+        # TODO
+        return sum([abs(a[0] - b[0]) + abs(a[1] - b[1])for a, b in zip(sorted(state.boxes), sorted(self.goals))])
+
+
+    def playAstar(self):
+
+        state = self.state        
+        hq = []
+  
+        state.h = self.h(state)
+        heapq.heappush(hq, state)
+
+        visited = set([state])
+        
+        while hq and self.isSolved(state) == False:
+            state = heapq.heappop(hq)
+            for s in self.genStates(state):
+                if s not in visited:
+                    s.h = self.h(s)
+                    heapq.heappush(hq, s)
+                    visited = visited | set([s])
+    
+        return self.traceback(state)
+
 
 if __name__ == '__main__':
 
@@ -201,8 +232,8 @@ if __name__ == '__main__':
     # print(soko)
     # soko.info()
     
-    ans = soko.play()
-
+    ans = soko.playAstar()
+    print(ans)
     fout = open(foutput,"w")
     print(ans, file=fout)
 
