@@ -40,7 +40,7 @@ class Sokoban:
 
         # Exclude `goals` from corners
         self.corners = self.precomputeCorners() - self.goals
-        
+
     
     def stripBoard(self, board):
         """
@@ -198,8 +198,9 @@ if __name__ == '__main__':
 
     soko = Sokoban(board)
     
-    print(soko)
-    soko.info()
+    # print(soko)
+    # soko.info()
+    
     ans = soko.play()
 
     fout = open(foutput,"w")
