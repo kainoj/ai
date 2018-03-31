@@ -23,52 +23,64 @@ Stan - mapa globalnie + lista pudełek                       ← this one
     cons: ain't easy: gen + render
 '''
 class SokoState:
-    def __init__(self, keeper, boxes):
+    def __init__(self, keeper, boxes, depth, dir):
         self.keeper = keeper
         self.boxes = boxes
+        self.depth = depth
+        self.dir = dir
     
     def __str__(self):
-        return "STATE: Keeper {}, boxes {}".format(self.keeper, sorted(self.boxes))
+        return "STATE: Keeper {}, boxes {}\tcame from: {}".format(self.keeper, sorted(self.boxes), self.dir)
     def __repr__(self):
         return self.__str__()
 
 class Sokoban:
 
-    DIR = {"U": (-1, 0), "D": (1, 0), "L": (0, -1), "R": (0, 1)}
+    DIR = {"U": (-1, 0), "D": (1, 0), "L": (0, -1), "R": (0, 1), "B": (0, 0)}
     MOVES = ["U", "D", "L", "R"]
+
     def __init__(self, board):
-        self.board = board
 
-        self.keeper = (0, 0)
-        self.boxes = []
-        self.goals = []
-
-        self.n = len(board)
-        self.m = len(board[0])
-       
-        for i in range(self.n):
-            for j in range(self.m):
-
-                if self.board[i][j] == 'K':
-                    self.keeper = (i, j)
-                    self.board[i][j] = '.'
-                elif self.board[i][j] == 'B':
-                    self.boxes.append((i, j))
-                    self.board[i][j] = '.'
-                elif self.board[i][j] == 'G':
-                    self.goals.append((i, j))
-                    self.board[i][j] = '.'
-                elif self.board[i][j] == '*':
-                    self.goals.append((i, j))
-                    self.boxes.append((i, j))
-                    self.board[i][j] = '.'
-                elif self.board[i][j] == '+':
-                    self.goals.append((i, j))
-                    self.keeper = (i, j)
-                    self.board[i][j] = '.'
+        self.board, self.goals, self.state = self.stripBoard(board)
         
-        self.boxes = set(self.boxes)
-        self.goals = set(self.goals)
+        self.n, self.m = len(board), len(board[0])
+
+        self.boxes = self.state.boxes
+        self.keeper = self.state.keeper
+    
+    def stripBoard(self, board):
+        """
+        Return values:
+            board : [[]]               a board with '.' and '#' only
+            goals : set()              a set of tuples of goals
+            state : SokoState          a initial state with depth = 0
+        """
+        keeper = (0, 0)
+        boxes = []
+        goals = []
+
+        for i in range(len(board)):
+            for j in range(len(board[0])):
+
+                if board[i][j] == 'K':
+                    keeper = (i, j)
+                    board[i][j] = '.'
+                elif board[i][j] == 'B':
+                    boxes.append((i, j))
+                    board[i][j] = '.'
+                elif board[i][j] == 'G':
+                    goals.append((i, j))
+                    board[i][j] = '.'
+                elif board[i][j] == '*':
+                    goals.append((i, j))
+                    boxes.append((i, j))
+                    board[i][j] = '.'
+                elif board[i][j] == '+':
+                    goals.append((i, j))
+                    keeper = (i, j)
+                    board[i][j] = '.'
+        return board, set(goals), SokoState(keeper, set(boxes), 0, "B")
+
 
         
     def __str__(self):
@@ -111,21 +123,23 @@ class Sokoban:
         return xy[0] + self.DIR[move][0], xy[1] + self.DIR[move][1]
 
 
-    def genStates(self):
+    def genStates(self, state):
         
         for move in self.MOVES:
             # A field next to the keeper
-            neigh = self.neighbour(self.keeper, move)
+            neigh = self.neighbour(state.keeper, move)
 
             if self.isFree(neigh):
                 # A filed towards move is FREE - let's move
-                yield SokoState(neigh, self.boxes)
+                yield SokoState(neigh, state.boxes, state.depth + 1, move)
             elif self.isBox(neigh):
                 # The neighbour towards move is a BOX - check if it's free
                 # Check if neighbour of a box is a free field
                 neigh2 = self.neighbour(neigh, move)
                 if self.isFree(neigh2):
-                    yield SokoState(neigh, self.boxes - set([neigh] ) | set([neigh2]))
+                    yield SokoState(neigh, 
+                                    state.boxes - set([neigh] ) | set([neigh2]), 
+                                    state.depth + 1, move)
     
     def play(self):
         print("TODO")
@@ -146,5 +160,5 @@ if __name__ == '__main__':
     
     print(soko)
     soko.info()
-    for m in soko.genStates():
+    for m in soko.genStates(soko.state):
         print(m)
