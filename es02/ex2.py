@@ -89,37 +89,36 @@ class Sokoban:
         print("Boxes: {}".format(sorted(self.boxes)))
         print("Golas: {}".format(sorted(self.goals)))
 
-    def isFree(self, x, y):
-        return self.board[x][y] == '.' and not (set([(x,y)]) & self.boxes)
+    def isFree(self, xy):
+        return self.board[xy[0]][xy[1]] == '.' and not (set([xy]) & self.boxes)
     
-    def isBox(self, x, y):
-        return len(set([(x, y)]) & self.boxes) > 0
+    def isBox(self, xy):
+        return len(set([xy]) & self.boxes) > 0
 
-    def neighbour(self, x, y, move):
+    def neighbour(self, xy, move):
         """
         Neighbour of (x,y) towards `move`
         """
-        return x + self.DIR[move][0], y +self.DIR[move][1]
+        return xy[0] + self.DIR[move][0], xy[1] + self.DIR[move][1]
 
 
     def genMoves(self):
-        kx, ky = self.keeper
-
+        
         for move in self.MOVES:
             # A field next to the keeper
-            nx, ny = self.neighbour(kx, ky, move)
+            neigh = self.neighbour(self.keeper, move)
+            print("neigh = {}".format(neigh))
+            print("Checking: {} ({})".format(move, neigh))
 
-            print("Checking: {} ({} {})".format(move, nx, ny))
-
-            if self.isFree(nx, ny):
+            if self.isFree(neigh):
                 # A filed towards move is FREE - let's move
-                print("\tOh yea I can move to ({} {}) towards {}".format(nx, ny, move))
-            elif self.isBox(nx, ny):
+                print("\tOh yea I can move to {} towards {}".format(neigh, move))
+            elif self.isBox(neigh):
                 # The neighbour towards move is a BOX - check if it's free
                 # Check if neighbour of a box is a free field
-                nnx, nny = self.neighbour(ny, ny, move)
-                if self.isFree(nnx, nny):
-                    print("\tOh yea I can move BOX to ({} {}) towards {}".format(nnx, nny, move))
+                neigh2 = self.neighbour(neigh, move)
+                if self.isFree(neigh2):
+                    print("\tOh yea I can move BOX to {} towards {}".format(neigh2, move))
             print()
     
     def play(self):
