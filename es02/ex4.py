@@ -127,14 +127,14 @@ class Commando:
 
         while q.empty() is False and self.isSolved(state) is False:
             state = q.get()
-            for move in random.sample(self.MOVES, 4):
-                neigh = self.getNeighbour(state, move)
-
-                # Let the Q with pending states be descending in lengths
-                if neigh not in visited and neigh.len <= stLen:
-                    q.put(neigh)
-                    visited = visited | set([neigh])
-                    stLen = neigh.len
+            # Let the Q with pending states be descending in lengths
+            if state.len <= stLen:
+                for move in random.sample(self.MOVES, 4):
+                    neigh = self.getNeighbour(state, move)
+                    if neigh not in visited:
+                        q.put(neigh)
+                        visited = visited | set([neigh])
+                        stLen = neigh.len
 
         return self.traceback(state)
 
