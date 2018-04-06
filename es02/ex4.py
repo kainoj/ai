@@ -7,49 +7,45 @@ START = 'S'
 GOST = 'B'      # Both goal and start
 WALL = '#'
 
+
 class ComaState:
-    def __init__(self, states, dir = "B", prev = None):
+    def __init__(self, states, dir="B", prev=None):
         """
         `state` is a sorted tuple of states of possible commando positions
         """
-        self.state = tuple(sorted(states))
+        self.state = states
         self.depth = 0 if prev is None else prev.depth + 1
         self.prev = prev
-        self.dir = dir;
+        self.dir = dir
         self.len = len(self.state)
-        
-    # def add(self, states):
-    #     self.state = state(self.state | states
-    #     return self
+
+        self.HASH = hash(tuple(sorted(self.state)))
 
     def __hash__(self):
-        return hash(self.state)
-    
+        return self.HASH
+
     def __eq__(self, other):
         return self.state == other.state
 
     def __str__(self):
-        return ', '.join(["({} {})".format(x,y) for x,y in self.state])
+        return ', '.join(["({} {})".format(x, y) for x, y in self.state])
 
     def __repr__(self):
         return self.__str__()
 
 
 class Commando:
-    
+
     DIR = {"U": (-1, 0), "D": (1, 0), "L": (0, -1), "R": (0, 1), "B": (0, 0)}
     MOVES = ["U", "D", "L", "R"]
 
     def __init__(self, board, uncert=False):
         self.board, self.goals, self.starts = self.stripBoard(board)
 
-        self.n = 60
-
         self.initState = ComaState(self.starts)
 
         if uncert:
             self.initState = self.uncertainty(self.initState)
-            # self.initState.depth = 0
 
     def stripBoard(self, board):
         """
@@ -75,15 +71,18 @@ class Commando:
         return board, set(goals), set(starts)
 
     def comaToStr(self):
-        b =  [b[:] for b in self.board]
-        for i, j in self.initState.state: b[i][j] = START
-        for i, j in self.goals: b[i][j] = GOAL
-        for i, j in self.goals & set(self.initState.state): b[i][j] = GOST
+        b = [b[:] for b in self.board]
+        for i, j in self.initState.state:
+            b[i][j] = START
+        for i, j in self.goals:
+            b[i][j] = GOAL
+        for i, j in self.goals & self.initState.state:
+            b[i][j] = GOST
         return b
-    
+
     def __str__(self):
         return '\n'.join([''.join(row) for row in self.comaToStr()])
-    
+
     def __repr__(self):
         return self.__str__()
 
@@ -92,12 +91,14 @@ class Commando:
         return (x, y) if self.board[x][y] != WALL else state
 
     def getNeighbour(self, comaState, move):
-        return ComaState({self.move(s, move) for s in comaState.state}, move, comaState)
+        return ComaState({self.move(s, move) for s in comaState.state},
+                         move, comaState)
 
     def uncertainty(self, state):
         prev = None
         while True:
-            ans = dict((m, len(self.getNeighbour(state, m).state)) for m in random.sample(self.MOVES,4))
+            ans = dict((m, len(self.getNeighbour(state, m).state))
+                       for m in random.sample(self.MOVES, 4))
             m = min(ans, key=ans.get)
             prev = state
             state = self.getNeighbour(state, m)
@@ -106,14 +107,14 @@ class Commando:
         return state
 
     def isSolved(self, state):
-        return set(state.state).issubset(self.goals)
-        
+        return state.state.issubset(self.goals)
+
     def traceback(self, state):
         ans = []
         while state.depth > 0:
             ans.append(state.dir)
             state = state.prev
-        return ''.join(reversed(ans)) 
+        return ''.join(reversed(ans))
 
     def playBfs(self):
         state = self.initState
@@ -124,7 +125,7 @@ class Commando:
         visited = set([state])
         stLen = state.len
 
-        while q.empty() == False and self.isSolved(state) == False:
+        while q.empty() is False and self.isSolved(state) is False:
             state = q.get()
             for move in random.sample(self.MOVES, 4):
                 neigh = self.getNeighbour(state, move)
@@ -135,14 +136,7 @@ class Commando:
                     visited = visited | set([neigh])
                     stLen = neigh.len
 
-            # if len(visited) % 1000 == 0:
-            #     print("depth: {} (visited =  {})".format(state.depth, len(visited)))
-            #     print(state)
-            #     print()
-
         return self.traceback(state)
-
-
 
 
 if __name__ == '__main__':
@@ -152,15 +146,14 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 2:
         finput = sys.argv[1]
-    
+
     board = []
     with open(finput) as f:
         board = [list(line.strip('\n')) for line in f]
-    
+
     coma = Commando(board, uncert=True)
-    
-    print(coma)
+
     ans = coma.playBfs()
     print(ans)
-    fout = open(foutput,"w")
+    fout = open(foutput, "w")
     print(ans, file=fout)
