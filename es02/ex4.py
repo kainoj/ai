@@ -16,6 +16,10 @@ class ComaState:
         self.prev = prev
         self.dir = dir;
 
+    def add(self, states):
+        self.state = self.state | states
+        return self
+
     def __hash__(self):
         return hash(tuple(sorted(self.state)))
     
@@ -25,21 +29,27 @@ class ComaState:
     def __str__(self):
         return ', '.join(["({} {})".format(x,y) for x,y in self.state])
 
+    def __repr__(self):
+        return self.__str__()
+
 
 class Commando:
     
     DIR = {"U": (-1, 0), "D": (1, 0), "L": (0, -1), "R": (0, 1), "B": (0, 0)}
     MOVES = ["U", "D", "L", "R"]
 
-    def __init__(self, board):
+    def __init__(self, board, uncert=False):
         self.board, self.goals, self.starts = self.stripBoard(board)
 
+        self.n = 20
+
         self.initState = ComaState(self.starts)
-        print(self)
-        self.initState = self.uncertainty(self.initState)
-        self.initState.depth = 0
-        print()
-        print(self)
+
+        if uncert:
+            print('przed')
+            print(self)
+            self.initState = self.uncertainty(self.initState)
+            self.initState.depth = 0
 
     def stripBoard(self, board):
         """
@@ -85,9 +95,10 @@ class Commando:
         return ComaState({self.move(s, move) for s in comaState.state}, move, comaState)
 
     def uncertainty(self, state):
-        ans = dict((m, len(self.getNeighbour(state, m).state)) for m in self.MOVES)
-        m = min(ans, key=ans.get)
-        return self.getNeighbour(state, m)
+        for i in range(self.n):
+            ans = dict((m, len(self.getNeighbour(state, m).state)) for m in self.MOVES)
+            state = self.getNeighbour(state, min(ans, key=ans.get))
+        return state
 
     def isSolved(self, state):
         return state.state.issubset(self.goals)
@@ -132,11 +143,10 @@ if __name__ == '__main__':
     with open(finput) as f:
         board = [list(line.strip('\n')) for line in f]
     
-    coma = Commando(board)
+    coma = Commando(board, uncert=True)
     
     print(coma)
     ans = coma.playBfs()
     print(ans)
-
     fout = open(foutput,"w")
     print(ans, file=fout)
