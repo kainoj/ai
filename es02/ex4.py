@@ -1,5 +1,6 @@
 import sys
 import queue
+import random
 
 GOAL = 'G'
 START = 'S'
@@ -9,19 +10,20 @@ WALL = '#'
 class ComaState:
     def __init__(self, states, dir = "B", prev = None):
         """
-        `state` is a set of states of possible commando positions
+        `state` is a sorted tuple of states of possible commando positions
         """
-        self.state = states
+        self.state = tuple(sorted(states))
         self.depth = 0 if prev is None else prev.depth + 1
         self.prev = prev
         self.dir = dir;
-
-    def add(self, states):
-        self.state = self.state | states
-        return self
+        self.len = len(self.state)
+        
+    # def add(self, states):
+    #     self.state = state(self.state | states
+    #     return self
 
     def __hash__(self):
-        return hash(tuple(sorted(self.state)))
+        return hash(self.state)
     
     def __eq__(self, other):
         return self.state == other.state
@@ -41,15 +43,13 @@ class Commando:
     def __init__(self, board, uncert=False):
         self.board, self.goals, self.starts = self.stripBoard(board)
 
-        self.n = 20
+        self.n = 60
 
         self.initState = ComaState(self.starts)
 
         if uncert:
-            print('przed')
-            print(self)
             self.initState = self.uncertainty(self.initState)
-            self.initState.depth = 0
+            # self.initState.depth = 0
 
     def stripBoard(self, board):
         """
@@ -78,7 +78,7 @@ class Commando:
         b =  [b[:] for b in self.board]
         for i, j in self.initState.state: b[i][j] = START
         for i, j in self.goals: b[i][j] = GOAL
-        for i, j in self.goals & self.initState.state: b[i][j] = GOST
+        for i, j in self.goals & set(self.initState.state): b[i][j] = GOST
         return b
     
     def __str__(self):
@@ -95,13 +95,18 @@ class Commando:
         return ComaState({self.move(s, move) for s in comaState.state}, move, comaState)
 
     def uncertainty(self, state):
-        for i in range(self.n):
-            ans = dict((m, len(self.getNeighbour(state, m).state)) for m in self.MOVES)
-            state = self.getNeighbour(state, min(ans, key=ans.get))
+        prev = None
+        while True:
+            ans = dict((m, len(self.getNeighbour(state, m).state)) for m in random.sample(self.MOVES,4))
+            m = min(ans, key=ans.get)
+            prev = state
+            state = self.getNeighbour(state, m)
+            if ans[m] < 3 or prev == state:
+                return state
         return state
 
     def isSolved(self, state):
-        return state.state.issubset(self.goals)
+        return set(state.state).issubset(self.goals)
         
     def traceback(self, state):
         ans = []
@@ -117,15 +122,24 @@ class Commando:
         q.put(state)
 
         visited = set([state])
+        stLen = state.len
 
         while q.empty() == False and self.isSolved(state) == False:
             state = q.get()
-            for move in self.MOVES:
+            for move in random.sample(self.MOVES, 4):
                 neigh = self.getNeighbour(state, move)
-                if neigh not in visited:
+
+                # Let the Q with pending states be descending in lengths
+                if neigh not in visited and neigh.len <= stLen:
                     q.put(neigh)
                     visited = visited | set([neigh])
-        
+                    stLen = neigh.len
+
+            # if len(visited) % 1000 == 0:
+            #     print("depth: {} (visited =  {})".format(state.depth, len(visited)))
+            #     print(state)
+            #     print()
+
         return self.traceback(state)
 
 
