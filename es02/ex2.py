@@ -9,13 +9,13 @@ Stan - mapa globalnie + lista pudełek                       ← this one
 '''
 
 class SokoState:
-    def __init__(self, keeper, boxes, dire = "B", prevState = None, h = 0):
+    def __init__(self, keeper, boxes, dire = "B", prevState = None, h = 42):
         self.keeper = keeper
         self.boxes = boxes
         self.dir = dire 
         self.depth = 0 if prevState is None else prevState.depth + 1
         self.prev = prevState
-        self.h = 42
+        self.h = h
         
     def __str__(self):
         return "STATE: Keeper {}, boxes {}\tcame from: {}".format(self.keeper, sorted(self.boxes), self.dir)
