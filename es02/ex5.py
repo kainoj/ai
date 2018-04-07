@@ -1,5 +1,6 @@
 import ex4
 import heapq
+import queue
 import sys
 from random import sample
 from math import sqrt
@@ -74,10 +75,40 @@ class Commando(ex4.Commando):
         # -1 * state.depth gives cool results
         # state.len also
         return state
+    
+    def preProcessDists(self):
+        """
+        For each field compute distance to the nearest goal
+        """
+        dists = {(n, m): 100000 for n in range(1, len(self.board) - 1) 
+                 for m in range(1, len(self.board[0]) - 1)}
+
+        for g in self.goals:
+
+            q = queue.Queue()
+            q.put((g, 0))
+            vis = set([g])
+
+            while q.empty() is False:
+                s, depth = q.get()
+
+                if depth < dists[s]:
+                    dists[s] = depth
+
+                for m in self.MOVES:
+                    neigh = self.move(s, m)
+                    if neigh not in vis:
+                        q.put((neigh, depth + 1))
+                        vis = vis | set([neigh])
+        return dists
+
 
     def astar(self):
         state = self.initState
         goals = self.goals
+
+        self.dists = self.preProcessDists()
+        print(self.dists)
 
         hq = []
         heapq.heappush(hq, self.computeF(state, goals))
@@ -110,8 +141,9 @@ if __name__ == '__main__':
         board = [list(line.strip('\n')) for line in f]
 
     coma = Commando(board)
+    print(coma)
     ans = coma.astar()
-    # print("{}".format(ans))
+    print("{}".format(ans))
 
     fout = open(foutput,"w")
     print(ans, file=fout)
