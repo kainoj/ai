@@ -19,6 +19,7 @@ class ComaState:
         self.dir = dir
         self.len = len(self.state)
 
+        self.F = self.depth
         self.HASH = hash(tuple(sorted(self.state)))
 
     def __hash__(self):
@@ -34,7 +35,7 @@ class ComaState:
         return self.__str__()
 
     def __lt__(self, other):
-        return self.depth > other.depth
+        return self.F < other.F
 
 
 class Commando:
