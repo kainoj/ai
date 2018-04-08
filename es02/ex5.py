@@ -22,40 +22,6 @@ class Commando(ex4.Commando):
         y = a[1] - b[1]
         return sqrt(x*x + y*y)
     
-    def f_average(self, state, goals):
-        """
-        Average distance between each state and the nearest goal.
-        Works pretty good, but still not efficient enough
-        """
-        s = ([min([self.dist2(g, s) for g in goals]) for s in state.state])
-        return sum(s)/len(s)
-    
-    def f_max(self, state, goals):
-        s = ([max([self.dist2(s, g) for g in goals]) for s in state.state])
-        return max(s)
-    
-    def f_min(self, state, goals):
-        s = ([min([self.dist2(s, g) for g in goals]) for s in state.state])
-        return min(s)
-
-    def centroid(self, points):
-        return (sum(g[0] for g in points)/len(points), sum(g[1] for g in points)/len(points))
-    
-    def f_goals_centroid(self, state, goals):
-        c = self.centroid(goals)
-        s = [self.dist2(s, c) for s in state.state]
-        return sum(s)/len(s)
-
-    def f_state_centroid(self, state, goals):
-        c = self.centroid(state.state)
-        s = [self.dist2(s, c) for s in goals]
-        return self.avg(s)
-    
-    def f_centroid(self, state, goals):
-        cs = self.centroid(state.state)
-        cg = self.centroid(goals)
-        return self.dist2(cs, cg)
-
     def avg(self, arr):
         return sum(arr) / len(arr)
 
@@ -68,12 +34,9 @@ class Commando(ex4.Commando):
 
         Note: F = g = self.depth is just an ordinary BFS
         """
-        s = ([self.avg([self.dist2(s, g) for g in goals]) for s in state.state])
-
-        state.F = state.depth + self.f_state_centroid(state, goals)*state.depth/state.len
-
-        # -1 * state.depth gives cool results
-        # state.len also
+        d = max([self.dists[s] for s in state.state])
+       
+        state.F = state.depth + d
         return state
     
     def preProcessDists(self):
@@ -81,7 +44,8 @@ class Commando(ex4.Commando):
         For each field compute distance to the nearest goal
         """
         dists = {(n, m): 100000 for n in range(1, len(self.board) - 1) 
-                 for m in range(1, len(self.board[0]) - 1)}
+                 for m in range(1, len(self.board[0]) - 1) }
+                # if self.board[n][m] != ex4.WALL}
 
         for g in self.goals:
 
@@ -108,7 +72,6 @@ class Commando(ex4.Commando):
         goals = self.goals
 
         self.dists = self.preProcessDists()
-        print(self.dists)
 
         hq = []
         heapq.heappush(hq, self.computeF(state, goals))
@@ -141,9 +104,10 @@ if __name__ == '__main__':
         board = [list(line.strip('\n')) for line in f]
 
     coma = Commando(board)
-    print(coma)
     ans = coma.astar()
-    print("{}".format(ans))
+     
+    # print(coma)
+    # print("{}".format(ans))
 
     fout = open(foutput,"w")
     print(ans, file=fout)
