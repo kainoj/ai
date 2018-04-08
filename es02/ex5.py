@@ -44,8 +44,8 @@ class Commando(ex4.Commando):
         For each field compute distance to the nearest goal
         """
         dists = {(n, m): 100000 for n in range(1, len(self.board) - 1) 
-                 for m in range(1, len(self.board[0]) - 1) }
-                # if self.board[n][m] != ex4.WALL}
+                 for m in range(1, len(self.board[0]) - 1) 
+                 if self.board[n][m] != ex4.WALL}
 
         for g in self.goals:
 
@@ -76,17 +76,22 @@ class Commando(ex4.Commando):
         hq = []
         heapq.heappush(hq, self.computeF(state, goals))
 
-        visited = set([state])
-        stLen = state.len
+        visited = {}
+        visited[state] = state.F
 
         while hq and self.isSolved(state) is False:
             state = heapq.heappop(hq)
             for move in self.MOVES:
                 neigh = self.getNeighbour(state, move)
+                neigh = self.computeF(neigh, goals)
+                
                 if neigh not in visited:
-                    heapq.heappush(hq, self.computeF(neigh, goals))
-                    visited = visited | set([neigh])
-                    stLen = neigh.len
+                    heapq.heappush(hq, neigh)
+                    visited[neigh] = neigh.F
+                else:
+                    score = visited[neigh]
+                    if neigh.F < score:
+                        heapq.heappush(hq, neigh)
 
         return self.traceback(state)
 
@@ -107,7 +112,7 @@ if __name__ == '__main__':
     ans = coma.astar()
      
     # print(coma)
-    # print("{}".format(ans))
+    print("{}".format(ans))
 
     fout = open(foutput,"w")
     print(ans, file=fout)
