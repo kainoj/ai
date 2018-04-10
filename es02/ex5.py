@@ -83,9 +83,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         finput = sys.argv[1]
 
-    board = []
-    with open(finput) as f:
-        board = [list(line.strip('\n')) for line in f]
+    board = ex4.readBoard(finput)
 
     coma = Commando(board)
     ans = coma.astar()

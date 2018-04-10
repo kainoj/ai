@@ -142,6 +142,12 @@ class Commando:
 
         return self.traceback(state)
 
+def readBoard(finput):
+    board = []
+    with open(finput) as f:
+        board = [list(line.strip('\n')) for line in f]
+    return board
+
 
 if __name__ == '__main__':
 
@@ -151,11 +157,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         finput = sys.argv[1]
 
-    board = []
-    with open(finput) as f:
-        board = [list(line.strip('\n')) for line in f]
-
-    coma = Commando(board, uncert=True)
+    coma = Commando(readBoard(finput), uncert=True)
 
     ans = coma.playBfs()
     print(ans)
