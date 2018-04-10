@@ -14,3 +14,7 @@ ex4:
 
 ex5:
 	python validator.py zad5 python3 ex5.py
+
+ex6:
+	echo Running As with non admissible heuristic
+	python validator.py zad5 python3 ex6.py

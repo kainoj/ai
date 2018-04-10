@@ -43,13 +43,15 @@ class Commando:
     DIR = {"U": (-1, 0), "D": (1, 0), "L": (0, -1), "R": (0, 1), "B": (0, 0)}
     MOVES = ["U", "D", "L", "R"]
 
-    def __init__(self, board, uncert=False):
+    def __init__(self, board, uncert=False, non_admissible=False):
         self.board, self.goals, self.starts = self.stripBoard(board)
 
         self.initState = ComaState(self.starts)
 
         if uncert:
             self.initState = self.uncertainty(self.initState)
+        
+        self.non_admissible = non_admissible
 
     def stripBoard(self, board):
         """
