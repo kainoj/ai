@@ -9,6 +9,9 @@ ex1:
 ex2:
 	python validator.py zad2 python3 ex2.py
 
+ex3:
+	python validator.py zad3 python3 ex3.py
+
 ex4:
 	python validator.py zad4 python3 ex4.py
 

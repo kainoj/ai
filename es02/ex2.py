@@ -10,6 +10,11 @@ Stan - mapa globalnie + lista pudełek                       ← this one
 
 class SokoState:
     def __init__(self, keeper, boxes, dire = "B", prevState = None, h = 42):
+        """
+        keeper - tuple (x, y)
+        boxes - set of tuples (x,y)
+        dir - direction towards a move was made to achieve this state
+        """
         self.keeper = keeper
         self.boxes = boxes
         self.dir = dire 
@@ -90,7 +95,7 @@ class Sokoban:
         corners = []
         for i in range(1, self.n - 1):
             for j in range(1, self.m - 1):
-                if board[i][j] == '.':
+                if b[i][j] == '.':
                     tl, tt, tr = b[i-1][j-1], b[i-1][j], b[i-1][j+1]
                     ml,     mr = b[i][j-1],              b[i][j+1]
                     bl, bb, br = b[i+1][j-1], b[i+1][j], b[i+1][j+1]
