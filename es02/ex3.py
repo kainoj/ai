@@ -2,14 +2,25 @@ import ex2
 import heapq
 import queue
 import sys
+from math import sqrt
 
 class Sokoban(ex2.Sokoban):
+
+    def dist(self, a, b):
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+    
+    def dist2(self, a, b):
+        x = a[0] - b[0]
+        y = a[1] - b[1]
+        return sqrt(x**2 + y**2)
 
     def computeH(self, state):
         """
         Computes heuristic function and retruns modified (soko) state
+        state.h = state.depth <=> BFS
         """
-        state.h = state.depth
+        d = [min([self.dist(b, g) for g in self.goals])  for b in state.boxes]
+        state.h = sum(d)/len(d)
         return state
 
     def bestFirstSearch(self):
@@ -71,5 +82,4 @@ if __name__ == '__main__':
     ans = soko.bestFirstSearch()
     fout = open(foutput,"w")
     print(ans, file=fout)
-    print(ans)
 
