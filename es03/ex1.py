@@ -41,10 +41,7 @@ class Nonogram():
         self.r, self.c = self.c, self.r
         self.rowDomain, self.colDomain = self.colDomain, self.rowDomain
         self.nono = self.nono.transpose()
-        if self.isTransposed:
-            self.isTransposed = False
-        else:
-            self.isTransposed = True
+        self.isTransposed = not self.isTransposed
 
     def getDomain(self, row_desc, row_len):
         """
@@ -85,7 +82,7 @@ class Nonogram():
 
     def intersectDomain(self, dom, what=1):
         """
-        dom - a domain of a row
+        `dom` - a domain of a row
         >>> nono = Nonogram(0, 0, row_desc=[], col_desc=[])
         >>> nono.intersectDomain({(1, 0, 0), (1, 1, 0), (1, 1, 1)})
         [1, 0, 0]
@@ -93,6 +90,8 @@ class Nonogram():
         [0, 0]
         >>> nono.intersectDomain({(0, 1, 1, 1, 1, 1), (1, 1, 1, 1, 1, 0)})
         [0, 1, 1, 1, 1, 0]
+        >>> nono.intersectDomain({(1, 0, 0), (1, 1, 0), (1, 1, 0)}, what=0)
+        [1, 1, 0]
         """
         dom = list(dom)
         intersect = list(dom[0])
@@ -111,48 +110,57 @@ class Nonogram():
                 return False
         return True
 
-    def solve(self):
+    def constrainDomain(self, pixels, what):
+        """
+        If a pixel (i, j) has value `what` in a member of the domain of j-th
+        column, then the member must be removed from the domain
+        """
+        for i, j in pixels:
+            toRemove = []
+            for col in self.colDomain[j]:
+                # This pixel has just been turned on (off), so we
+                # have to remove all corresponding pixels, which
+                # are disabled (enabled) from column domain
+                if col[i] == what:
+                    toRemove.append(col)
+            for rm in toRemove:
+                self.colDomain[j] -= {rm}
+
+    def ac3(self):
 
         while self.isSolved() is False:
             pixelsToBeOn = set()
             pixelsToBeOff = set()
 
-            # Through row domain intersection we'll get a set of pixels that
-            # surely must be on
             for i, row in enumerate(self.rowDomain):
+
+                # Having intersected row domains, we got a
+                # set of pixels that surely must be on
                 for j, r in enumerate(self.intersectDomain(row)):
-                    if r == 1:  # and self.nono[i][j] == 0:
+                    if r == 1:
                         self.nono[i][j] = 1
                         pixelsToBeOn |= {(i, j)}
 
-            # Now we'll intersect domains, but considering 0s (is it OR?)
-            for i, row in enumerate(self.rowDomain):
+                # Intersect domains, but considering 0s (it's OR on row domain)
                 for j, r in enumerate(self.intersectDomain(row, what=0)):
                     if r == 0:
                         self.nono[i][j] = 0
                         pixelsToBeOff |= {(i, j)}
 
-            for i, j in pixelsToBeOn:
-                toRemove = []
-                for col in self.colDomain[j]:
-                    # This pixel has just been turned on, thus it we
-                    # have to remove all disabled pixels from col domain
-                    if col[i] == 0:
-                        toRemove.append(col)
-                for rm in toRemove:
-                    self.colDomain[j] -= {rm}
-
-            for i, j in pixelsToBeOff:
-                toRemove = []
-                for col in self.colDomain[j]:
-                    # This pixel has just been turned off, thus it we
-                    # have to remove all enabled pixels from col domain
-                    if col[i] == 1:
-                        toRemove.append(col)
-                for rm in toRemove:
-                    self.colDomain[j] -= {rm}
+            self.constrainDomain(pixelsToBeOn, what=0)
+            self.constrainDomain(pixelsToBeOff, what=1)
 
             self.transpose()
+
+
+def readFromFile(finput):
+    lines = []
+    with open(finput) as f:
+        for line in f:
+            lines.append(list(map(int, line.strip('\n').split())))
+    r, c = lines[0][0], lines[0][1]
+
+    return Nonogram(r, c, row_desc=lines[1:r+1], col_desc=lines[r+1:])
 
 
 if __name__ == '__main__':
@@ -163,17 +171,9 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         finput = sys.argv[1]
 
-    lines = []
-    with open(finput) as f:
-        for line in f:
-            lines.append(list(map(int, line.strip('\n').split())))
+    nono = readFromFile(finput)
 
-    r = lines[0][0]
-    c = lines[0][1]
-
-    nono = Nonogram(r, c, row_desc=lines[1:r+1], col_desc=lines[r+1:])
-
-    nono.solve()
+    nono.ac3()
     print(nono)
 
     fout = open(foutput, "w")
