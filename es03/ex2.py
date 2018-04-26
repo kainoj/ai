@@ -147,6 +147,11 @@ class Nonogram():
                     if r == 0:
                         self.nono[i][j] = 0
                         pixelsToBeOff |= {(i, j)}
+                
+                if not pixelsToBeOff and pixelsToBeOn:
+                    if self.isTransposed:
+                        self.transpose()
+                    return
 
             self.constrainDomain(pixelsToBeOn, what=0)
             self.constrainDomain(pixelsToBeOff, what=1)
@@ -154,10 +159,13 @@ class Nonogram():
             self.transpose()
 
     def toProlog(self, foutput):
-        variables = [ self.V(i, j) for i in range(self.c) for j in range(self.r) ]
+        self.ac3()
+
+        variables = [ self.V(i, j) for i in range(self.r) for j in range(self.c) ]
 
         f = open(foutput, "w")
         print(':- use_module(library(clpfd)).', file=f)
+        print(':- set_prolog_stack(global, limit(100 000 000 000)).', file=f)
         print('solve([' + ', '.join(variables) + ']) :- ', file=f)
 
         for var in variables:
