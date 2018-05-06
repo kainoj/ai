@@ -190,6 +190,35 @@ class Board:
         res = moves1[level1.index(max(level1))]
         return res
 
+    def result_on_move(self, move, player):
+        self.do_move(move, player)
+        res = self.result()
+        self.undo_move()
+        return res
+
+    def awesomer_move(self, player):
+        return max((m for m in self.moves(player)),
+                   key=lambda m: self.field_bonus(m, player) +
+                   self.minmax(1-player, 1, m))
+
+    def minmax(self, player, depth, mmove):
+        self.do_move(mmove, 1-player)
+        if depth == 0 or self.terminal():
+            res = self.result()
+            self.undo_move()
+            return res
+
+        values = [self.field_bonus(move, player) +
+                  self.minmax(1 - player, depth-1, move)
+                  for move in self.moves(player)]
+
+        self.undo_move()
+        if player == 1:
+            return max(values)
+        else:
+            return min(values)
+
+
 
 def play(show=False):
     player = 0
@@ -200,7 +229,7 @@ def play(show=False):
             B.draw()
             B.show()
         if player == 1:
-            m = B.awesome_move(player)
+            m = B.awesomer_move(player) # !!!!
         else:
             m = B.random_move(player)
         B.do_move(m, player)
