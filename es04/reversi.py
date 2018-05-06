@@ -101,7 +101,7 @@ class Board:
             if self.get(x, y) == player:
                 for (nx, ny) in to_beat:
                     self.board[ny][nx] = player
-    
+
     def undo_move(self):
         if self.history:
             self.board = self.history.pop()
@@ -163,12 +163,12 @@ class Board:
 
         level1 = []
         moves1 = self.moves(player)
-        
+
         # Player moves - MAX
         for move in [m for m in moves1]:
             self.do_move(move, player)
             level2 = []
-            
+
             # Player2 moves - MIN
             for move2 in [m for m in self.moves(player2)]:
                 self.do_move(move2, player2)
@@ -177,7 +177,10 @@ class Board:
                 # Player moves - MAX
                 for move3 in [m for m in self.moves(player)]:
                     self.do_move(move3, player)
-                    level3.append(self.result() + self.field_bonus(move3, player))
+                    bon = self.field_bonus(move3, player) \
+                        + self.field_bonus(move2, player2) \
+                        + self.field_bonus(move, player)
+                    level3.append(self.result() + bon)
                     self.undo_move()
                 level2.append(max(level3))
                 self.undo_move()
@@ -227,4 +230,4 @@ if __name__ == "__main__":
     for i in range(rounds):
         if play(rounds == 1) > 0:
             cntr += 1
-    print("Won {} / {} games.".format(cntr, rounds)) 
+    print("Won {} / {} games.".format(cntr, rounds))
