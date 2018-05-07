@@ -116,15 +116,15 @@ class Board:
         """
         result = #black - #white
         """
-        res = 0
+        max_coins = min_coins = 0.0
         for y in range(M):
             for x in range(M):
                 b = self.board[y][x]
                 if b == MIN:
-                    res -= 1
+                    min_coins += 1.0
                 elif b == MAX:
-                    res += 1
-        return res
+                    max_coins += 1.0
+        return (max_coins - min_coins) / (max_coins + min_coins)
 
     def terminal(self):
         if not self.fields:
@@ -154,37 +154,51 @@ class Board:
             x = 7 - x
         if y > 3:
             y = 7 - y
+        bonus = BONUS[x][y] / 16.16
         if player == MAX:
-            return BONUS[x][y]
-        return -BONUS[x][y]
+            return bonus
+        return -bonus
 
     def corners_bonus(self, player):
         CORNERS = [(0, 0), (0, 7), (7, 0), (7, 7)]
-        max_corners = 0
-        min_corners = 0
+        max_corners = min_corners = 0.0
         for i, j in CORNERS:
             if self.board[i][j] == MAX:
-                max_corners += 1
+                max_corners += 1.0
 
             if self.board[i][j] == MIN:
-                min_corners += 1
-        bonus = max_corners - min_corners
+                min_corners += 1.0
+        bonus = 0.0
+        if(max_corners + min_corners != 0):
+            bonus = (max_corners - min_corners) / (max_corners + min_corners)
+
         if player == MAX:
             return bonus
         return -bonus
 
     def close_corner_penalty(self, player):
         CLOSE = [(0, 1), (0, 6), (1, 0), (1, 7), (6, 0), (6, 7), (7, 1), (7, 6)]
-        max_close = min_close = 0
+        max_close = min_close = 0.0
         for i, j in CLOSE:
             if self.board[i][j] == MAX:
-                max_close += 1
+                max_close += 1.0
             if self.board[i][j] == MIN:
-                min_close += 1
-        penalty = min_close - max_close
+                min_close += 1.0
+
+        penalty = 0.0
+        if (min_close + max_close != 0):
+            penalty = (min_close - max_close) / (min_close + max_close)
+
         if player == MAX:
             return penalty
         return -penalty
+
+    def bonus(self, move, player):
+        bonus = 1.6 * self.result() + \
+                1.0 * self.field_bonus(move, player) +\
+                0.3 * self.corners_bonus(player) +\
+                0.2 * self.close_corner_penalty(player)
+        return bonus
 
     def awesome_move(self, player):
         player2 = 1 - player
@@ -226,18 +240,12 @@ class Board:
         maxval = -10000
         for m in moves:
             self.do_move(m, player)
-            v = self.bonus(m, player) + self.minmax(1-player, 2)
+            v = self.bonus(m, player) + self.minmax(1-player, 1)
             self.undo_move()
             if v > maxval:
                 maxval = v
                 awesome = m
         return awesome
-
-    def bonus(self, move, player):
-        bonus = 1.0 * self.field_bonus(move, player) +\
-                0.9 * self.corners_bonus(player) +\
-                1.1 * self.close_corner_penalty(player)
-        return bonus
 
     def minmax(self, player, depth):
         if depth == 0 or self.terminal():
@@ -293,5 +301,4 @@ if __name__ == "__main__":
         if play(rounds == 1) > 0:
             cntr += 1
         if i % 100 == 0:
-            print("...won {} / {} games ({}%)".format(cntr, i, 100.0 * cntr/i))
-    print("Won {} / {} games.".format(cntr, rounds))
+            print("Won {} / {} games ({}%)".format(cntr, i, 100.0 * cntr/i))
