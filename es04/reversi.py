@@ -4,14 +4,16 @@ import sys
 import reversi_gfx as gfx
 
 M = 8
+MAX = 1
+MIN = 0
 
 
 def initial_board():
     B = [[None] * M for i in range(M)]
-    B[3][3] = 1
-    B[4][4] = 1
-    B[3][4] = 0
-    B[4][3] = 0
+    B[3][3] = MAX
+    B[4][4] = MAX
+    B[3][4] = MIN
+    B[4][3] = MIN
     return B
 
 
@@ -35,7 +37,7 @@ class Board:
                 b = self.board[i][j]
                 if b is None:
                     res.append('.')
-                elif b == 1:
+                elif b == MAX:
                     res.append('#')
                 else:
                     res.append('o')
@@ -49,9 +51,9 @@ class Board:
 
         for i in range(M):
             for j in range(M):
-                if self.board[i][j] == 1:
+                if self.board[i][j] == MAX:
                     gfx.kolko(j, i, 'black')
-                if self.board[i][j] == 0:
+                if self.board[i][j] == MIN:
                     gfx.kolko(j, i, 'white')
 
     def moves(self, player):
@@ -118,9 +120,9 @@ class Board:
         for y in range(M):
             for x in range(M):
                 b = self.board[y][x]
-                if b == 0:
+                if b == MIN:
                     res -= 1
-                elif b == 1:
+                elif b == MAX:
                     res += 1
         return res
 
@@ -152,9 +154,37 @@ class Board:
             x = 7 - x
         if y > 3:
             y = 7 - y
-        if player == 1:
+        if player == MAX:
             return BONUS[x][y]
         return -BONUS[x][y]
+
+    def corners_bonus(self, player):
+        CORNERS = [(0, 0), (0, 7), (7, 0), (7, 7)]
+        max_corners = 0
+        min_corners = 0
+        for i, j in CORNERS:
+            if self.board[i][j] == MAX:
+                max_corners += 1
+
+            if self.board[i][j] == MIN:
+                min_corners += 1
+        bonus = max_corners - min_corners
+        if player == MAX:
+            return bonus
+        return -bonus
+
+    def close_corner_penalty(self, player):
+        CLOSE = [(0, 1), (0, 6), (1, 0), (1, 7), (6, 0), (6, 7), (7, 1), (7, 6)]
+        max_close = min_close = 0
+        for i, j in CLOSE:
+            if self.board[i][j] == MAX:
+                max_close += 1
+            if self.board[i][j] == MIN:
+                min_close += 1
+        penalty = min_close - max_close
+        if player == MAX:
+            return penalty
+        return -penalty
 
     def awesome_move(self, player):
         player2 = 1 - player
@@ -190,34 +220,34 @@ class Board:
         res = moves1[level1.index(max(level1))]
         return res
 
-    def result_on_move(self, move, player):
-        self.do_move(move, player)
-        res = self.result()
-        self.undo_move()
-        return res
-
     def awesomer_move(self, player):
         moves = self.moves(player)
         awesome = None
         maxval = -10000
         for m in moves:
             self.do_move(m, player)
-            v = self.field_bonus(m, player) + self.minmax(1-player, 2)
+            v = self.bonus(m, player) + self.minmax(1-player, 2)
             self.undo_move()
             if v > maxval:
                 maxval = v
                 awesome = m
         return awesome
 
+    def bonus(self, move, player):
+        bonus = 1.0 * self.field_bonus(move, player) +\
+                0.9 * self.corners_bonus(player) +\
+                1.1 * self.close_corner_penalty(player)
+        return bonus
+
     def minmax(self, player, depth):
         if depth == 0 or self.terminal():
             return self.result()
 
-        values = [self.field_bonus(move, player) +
+        values = [self.bonus(move, player) +
                   self.minmax(1 - player, depth-1)
                   for move in self.moves(player)]
 
-        if player == 1:
+        if player == MAX:
             return max(values)
         else:
             return min(values)
@@ -231,7 +261,7 @@ def play(show=False):
         if show:
             B.draw()
             B.show()
-        if player == 1:
+        if player == MAX:
             m = B.awesomer_move(player) # !!!!
         else:
             m = B.random_move(player)
