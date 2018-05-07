@@ -145,8 +145,8 @@ class Board:
             return 0
         BONUS = [[16.16, -3.03,  0.99,  0.43],
                  [-4.12, -1.81, -0.08, -0.27],
-                 [ 1.33, -0.04,  0.51,  0.07],
-                 [ 0.63, -0.18, -0.04, -0.01]]
+                 [01.33, -0.04,  0.51,  0.07],
+                 [00.63, -0.18, -0.04, -0.01]]
         x, y = field
         if x > 3:
             x = 7 - x
@@ -197,27 +197,30 @@ class Board:
         return res
 
     def awesomer_move(self, player):
-        return max((m for m in self.moves(player)),
-                   key=lambda m: self.field_bonus(m, player) +
-                   self.minmax(1-player, 1, m))
-
-    def minmax(self, player, depth, mmove):
-        self.do_move(mmove, 1-player)
-        if depth == 0 or self.terminal():
-            res = self.result()
+        moves = self.moves(player)
+        awesome = None
+        maxval = -10000
+        for m in moves:
+            self.do_move(m, player)
+            v = self.field_bonus(m, player) + self.minmax(1-player, 2)
             self.undo_move()
-            return res
+            if v > maxval:
+                maxval = v
+                awesome = m
+        return awesome
+
+    def minmax(self, player, depth):
+        if depth == 0 or self.terminal():
+            return self.result()
 
         values = [self.field_bonus(move, player) +
-                  self.minmax(1 - player, depth-1, move)
+                  self.minmax(1 - player, depth-1)
                   for move in self.moves(player)]
 
-        self.undo_move()
         if player == 1:
             return max(values)
         else:
             return min(values)
-
 
 
 def play(show=False):
@@ -256,7 +259,9 @@ if __name__ == "__main__":
         rounds = int(sys.argv[1])
 
     cntr = 0
-    for i in range(rounds):
+    for i in range(1, rounds+1):
         if play(rounds == 1) > 0:
             cntr += 1
+        if i % 100 == 0:
+            print("...won {} / {} games ({}%)".format(cntr, i, 100.0 * cntr/i))
     print("Won {} / {} games.".format(cntr, rounds))
