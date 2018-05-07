@@ -7,6 +7,12 @@ M = 8
 MAX = 1
 MIN = 0
 
+DEPTH = 2
+CX_RES = 1.9  # * self.result()
+CX_FIE = 1.9  # * self.field_bonus(move, player)
+CX_COR = 0.0  # * self.corners_bonus(player)
+CX_PEN = 0.0  # * self.close_corner_penalty(player)
+
 
 def initial_board():
     B = [[None] * M for i in range(M)]
@@ -194,10 +200,10 @@ class Board:
         return -penalty
 
     def bonus(self, move, player):
-        bonus = 1.6 * self.result() + \
-                1.0 * self.field_bonus(move, player) +\
-                0.3 * self.corners_bonus(player) +\
-                0.2 * self.close_corner_penalty(player)
+        bonus = CX_RES * self.result() + \
+                CX_FIE * self.field_bonus(move, player) +\
+                CX_COR * self.corners_bonus(player) +\
+                CX_PEN * self.close_corner_penalty(player)
         return bonus
 
     def awesome_move(self, player):
@@ -240,7 +246,7 @@ class Board:
         maxval = -10000
         for m in moves:
             self.do_move(m, player)
-            v = self.bonus(m, player) + self.minmax(1-player, 1)
+            v = self.bonus(m, player) + self.minmax(1-player, DEPTH)
             self.undo_move()
             if v > maxval:
                 maxval = v
@@ -297,6 +303,15 @@ if __name__ == "__main__":
         rounds = int(sys.argv[1])
 
     cntr = 0
+
+    print("====== INFO =======")
+    print("> depth  = {}".format(DEPTH))
+    print("> CX_RES = {}".format(CX_RES))
+    print("> CX_FIE = {}".format(CX_FIE))
+    print("> CX_COR = {}".format(CX_COR))
+    print("> CX_PEN = {}".format(CX_PEN))
+    print("===================\n")
+
     for i in range(1, rounds+1):
         if play(rounds == 1) > 0:
             cntr += 1
