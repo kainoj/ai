@@ -227,9 +227,9 @@ class Board:
                 # Player moves - MAX
                 for move3 in [m for m in self.moves(player)]:
                     self.do_move(move3, player)
-                    bon = self.field_bonus(move3, player) \
-                        + self.field_bonus(move2, player2) \
-                        + self.field_bonus(move, player)
+                    bon = self.bonus(move3, player) \
+                        + self.bonus(move2, player2) \
+                        + self.bonus(move, player)
                     level3.append(self.result() + bon)
                     self.undo_move()
                 level2.append(max(level3))
@@ -276,7 +276,7 @@ def play(show=False):
             B.draw()
             B.show()
         if player == MAX:
-            m = B.awesomer_move(player) # !!!!
+            m = B.awesome_move(player)  # !!!!
         else:
             m = B.random_move(player)
         B.do_move(m, player)
