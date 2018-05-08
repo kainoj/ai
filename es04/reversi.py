@@ -8,9 +8,9 @@ MAX = 1
 MIN = 0
 
 DEPTH = 1
-CX_RES = 1.95  # * self.result()
-CX_FIE = 2.05  # * self.field_bonus(move, player)
-CX_COR = 0.0   # * self.corners_bonus(player)
+CX_RES = 10  # * self.result()
+CX_FIE = 10  # * self.field_bonus(move, player)
+CX_COR = 801.724   # * self.corners_bonus(player)
 CX_PEN = 0.0   # * self.close_corner_penalty(player)
 
 
@@ -130,7 +130,7 @@ class Board:
                     min_coins += 1.0
                 elif b == MAX:
                     max_coins += 1.0
-        return (max_coins - min_coins) / (max_coins + min_coins)
+        return 100.0 * (max_coins - min_coins) / (max_coins + min_coins)
 
     def terminal(self):
         if not self.fields:
@@ -176,7 +176,7 @@ class Board:
                 min_corners += 1.0
         bonus = 0.0
         if(max_corners + min_corners != 0):
-            bonus = (max_corners - min_corners) / (max_corners + min_corners)
+            bonus = 100.0 * (max_corners - min_corners) / (max_corners + min_corners)
 
         if player == MAX:
             return bonus
@@ -193,11 +193,11 @@ class Board:
 
         penalty = 0.0
         if (min_close + max_close != 0):
-            penalty = (min_close - max_close) / (min_close + max_close)
+            penalty = 100.0 * (max_close - min_close) / (min_close + max_close)
 
         if player == MAX:
-            return penalty
-        return -penalty
+            return -penalty
+        return penalty
 
     def bonus(self, move, player):
         bonus = CX_RES * self.result() + \
