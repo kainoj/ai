@@ -16,4 +16,66 @@
 > CX_COR = 0.0
 > CX_PEN = 0.0
 ===================
-91.5%
+91.5% wins
+
+
+====== INFO =======
+> depth  = 2
+> CX_RES = 1.9
+> CX_FIE = 1.9
+> CX_COR = 0.0
+> CX_PEN = 0.0
+===================
+9% loss ^ the same
+
+
+====== INFO =======
+> depth  = 1
+> CX_RES = 1.9
+> CX_FIE = 1.0
+> CX_COR = 0.1
+> CX_PEN = 0.001
+===================
+87 loss
+
+
+
+====== INFO =======
+> depth  = 1
+> CX_RES = 1.9
+> CX_FIE = 2
+> CX_COR = 0
+> CX_PEN = 0
+===================
+
+Lost 7 / 100 games (7.0%)
+Lost 14 / 200 games (7.0%)
+Lost 20 / 300 games (6.66666666667%)
+Lost 24 / 400 games (6.0%)
+Lost 35 / 500 games (7.0%)
+Lost 43 / 600 games (7.16666666667%)
+Lost 54 / 700 games (7.71428571429%)
+Lost 60 / 800 games (7.5%)
+Lost 65 / 900 games (7.22222222222%)
+Lost 71 / 1000 games (7.1%)
+
+
+
+====== INFO =======
+> depth  = 1
+> CX_RES = 1.95
+> CX_FIE = 2
+> CX_COR = 0
+> CX_PEN = 0
+===================
+
+Lost 7 / 100 games (7.0%)
+Lost 15 / 200 games (7.5%)
+Lost 22 / 300 games (7.33333333333%)
+Lost 30 / 400 games (7.5%)
+Lost 36 / 500 games (7.2%)
+Lost 48 / 600 games (8.0%)
+Lost 54 / 700 games (7.71428571429%)
+Lost 64 / 800 games (8.0%)
+Lost 70 / 900 games (7.77777777778%)
+Lost 76 / 1000 games (7.6%)

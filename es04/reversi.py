@@ -7,11 +7,11 @@ M = 8
 MAX = 1
 MIN = 0
 
-DEPTH = 2
-CX_RES = 1.9  # * self.result()
-CX_FIE = 1.9  # * self.field_bonus(move, player)
-CX_COR = 0.0  # * self.corners_bonus(player)
-CX_PEN = 0.0  # * self.close_corner_penalty(player)
+DEPTH = 1
+CX_RES = 1.95  # * self.result()
+CX_FIE = 2.05  # * self.field_bonus(move, player)
+CX_COR = 0.0   # * self.corners_bonus(player)
+CX_PEN = 0.0   # * self.close_corner_penalty(player)
 
 
 def initial_board():
@@ -23,7 +23,7 @@ def initial_board():
     return B
 
 
-class Board:
+class Board:    
     dirs = [(0, 1), (1, 0), (-1, 0), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
 
     def __init__(self):
@@ -302,7 +302,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         rounds = int(sys.argv[1])
 
-    cntr = 0
+    loss = 0
 
     print("====== INFO =======")
     print("> depth  = {}".format(DEPTH))
@@ -313,7 +313,7 @@ if __name__ == "__main__":
     print("===================\n")
 
     for i in range(1, rounds+1):
-        if play(rounds == 1) > 0:
-            cntr += 1
+        if play(rounds == 1) < 0:
+            loss += 1
         if i % 100 == 0:
-            print("Won {} / {} games ({}%)".format(cntr, i, 100.0 * cntr/i))
+            print("Lost {} / {} games ({}%)".format(loss, i, 100.0 * loss/i))
