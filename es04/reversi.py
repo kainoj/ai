@@ -155,12 +155,19 @@ class Board:
                  [-4.12, -1.81, -0.08, -0.27],
                  [01.33, -0.04,  0.51,  0.07],
                  [00.63, -0.18, -0.04, -0.01]]
-        x, y = field
-        if x > 3:
-            x = 7 - x
-        if y > 3:
-            y = 7 - y
-        bonus = BONUS[x][y] / 16.16
+        bonus = 0
+        for i in range(8):
+            for j in range(8):
+                x, y = i, j
+                if i > 3:
+                    x = 7 - i
+                if j > 3:
+                    y = 7 - j
+                if self.board[i][j] == MAX:
+                    bonus += BONUS[x][y]
+                elif self.board[i][j] == MIN:
+                    bonus -= BONUS[x][y]
+        # bonus = BONUS[x][y] / 16.16
         if player == MAX:
             return bonus
         return -bonus
@@ -174,9 +181,7 @@ class Board:
 
             if self.board[i][j] == MIN:
                 min_corners += 1.0
-        bonus = 0.0
-        if(max_corners + min_corners != 0):
-            bonus = 100.0 * (max_corners - min_corners) / (max_corners + min_corners)
+        bonus = 25 * (max_corners - min_corners)
 
         if player == MAX:
             return bonus
