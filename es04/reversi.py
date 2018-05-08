@@ -230,7 +230,7 @@ class Board:
                     bon = self.bonus(move3, player) \
                         + self.bonus(move2, player2) \
                         + self.bonus(move, player)
-                    level3.append(self.result() + bon)
+                    level3.append(bon)
                     self.undo_move()
                 level2.append(max(level3))
                 self.undo_move()
