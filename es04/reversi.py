@@ -1,17 +1,17 @@
 import random
 import sys
-# from collections import defaultdict as dd
 import reversi_gfx as gfx
 
 M = 8
 MAX = 1
 MIN = 0
+INF = 100000000
 
 DEPTH = 1
 CX_RES = 10  # * self.result()
 CX_FIE = 10  # * self.field_bonus(move, player)
 CX_COR = 801.724   # * self.corners_bonus(player)
-CX_PEN = 0.0   # * self.close_corner_penalty(player)
+CX_PEN = 0*382.026  # * self.close_corner_penalty(player)
 
 
 def initial_board():
@@ -151,26 +151,25 @@ class Board:
         """
         if field is None:
             return 0
-        BONUS = [[16.16, -3.03,  0.99,  0.43],
-                 [-4.12, -1.81, -0.08, -0.27],
-                 [01.33, -0.04,  0.51,  0.07],
-                 [00.63, -0.18, -0.04, -0.01]]
+        BONUS = [[16.16, -3.03, 0.99, 0.43, 0.43, 0.99, -3.03, 16.16],
+                 [-4.12, -1.81, -0.08, -0.27, -0.27, -0.08, -1.81, -4.12],
+                 [1.33, -0.04, 0.51, 0.07, 0.07, 0.51, -0.04, 1.33],
+                 [0.63, -0.18, -0.04, -0.01, -0.01, -0.04, -0.18, 0.63],
+                 [0.63, -0.18, -0.04, -0.01, -0.01, -0.04, -0.18, 0.63],
+                 [1.33, -0.04, 0.51, 0.07, 0.07, 0.51, -0.04, 1.33],
+                 [-4.12, -1.81, -0.08, -0.27, -0.27, -0.08, -1.81, -4.12],
+                 [16.16, -3.03, 0.99, 0.43, 0.43, 0.99, -3.03, 16.16]]
         bonus = 0
         for i in range(8):
             for j in range(8):
-                x, y = i, j
-                if i > 3:
-                    x = 7 - i
-                if j > 3:
-                    y = 7 - j
                 if self.board[i][j] == MAX:
-                    bonus += BONUS[x][y]
+                    bonus += BONUS[i][j]
                 elif self.board[i][j] == MIN:
-                    bonus -= BONUS[x][y]
-        # bonus = BONUS[x][y] / 16.16
-        if player == MAX:
-            return bonus
-        return -bonus
+                    bonus -= BONUS[i][j]
+        return bonus
+        # if player == MAX:
+        #     return bonus
+        # return -bonus
 
     def corners_bonus(self, player):
         CORNERS = [(0, 0), (0, 7), (7, 0), (7, 7)]
@@ -182,27 +181,25 @@ class Board:
             if self.board[i][j] == MIN:
                 min_corners += 1.0
         bonus = 25 * (max_corners - min_corners)
-
-        if player == MAX:
-            return bonus
-        return -bonus
+        return bonus
+        # if player == MAX:
+        #     return bonus
+        # return -bonus
 
     def close_corner_penalty(self, player):
         CLOSE = [(0, 1), (0, 6), (1, 0), (1, 7), (6, 0), (6, 7), (7, 1), (7, 6)]
-        max_close = min_close = 0.0
+        close_diff = 0
         for i, j in CLOSE:
             if self.board[i][j] == MAX:
-                max_close += 1.0
+                close_diff += 1.0
             if self.board[i][j] == MIN:
-                min_close += 1.0
+                close_diff -= 1.0
 
-        penalty = 0.0
-        if (min_close + max_close != 0):
-            penalty = 100.0 * (max_close - min_close) / (min_close + max_close)
-
-        if player == MAX:
-            return -penalty
+        penalty = -12.5 * (close_diff)
         return penalty
+        # if player == MAX:
+        #     return penalty
+        # return -penalty
 
     def bonus(self, move, player):
         bonus = CX_RES * self.result() + \
@@ -222,12 +219,12 @@ class Board:
         # Player moves - MAX
         for move in [m for m in moves1]:
             self.do_move(move, player)
-            level2 = []
+            level2min = INF
 
             # Player2 moves - MIN
             for move2 in [m for m in self.moves(player2)]:
                 self.do_move(move2, player2)
-                level3 = []
+                level3max = -INF
 
                 # Player moves - MAX
                 for move3 in [m for m in self.moves(player)]:
@@ -235,11 +232,13 @@ class Board:
                     bon = self.bonus(move3, player) \
                         + self.bonus(move2, player2) \
                         + self.bonus(move, player)
-                    level3.append(bon)
+                    if bon > level3max:
+                        level3max = bon
                     self.undo_move()
-                level2.append(max(level3))
+                if level3max < level2min:
+                    level2min = level3max
                 self.undo_move()
-            level1.append(min(level2))
+            level1.append(level2min)
             self.undo_move()
 
         res = moves1[level1.index(max(level1))]
