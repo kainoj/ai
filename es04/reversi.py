@@ -6,12 +6,13 @@ M = 8
 MAX = 1
 MIN = 0
 INF = 100000000
+PLY = 0
 
 DEPTH = 1
-CX_RES = 0  # * self.result()
+CX_RES = 10  # * self.result()
 CX_FIE = 0  # * self.field_bonus(move, player)
-CX_COR = 1801.724   # * self.corners_bonus(player)
-CX_PEN = 382.026  # * self.close_corner_penalty(player)
+CX_COR = 8   # * self.corners_bonus(player)
+CX_PEN = 6  # * self.close_corner_penalty(player)
 
 
 def initial_board():
@@ -162,7 +163,10 @@ class Board:
                     min_coins += 1.0
                 elif b == MAX:
                     max_coins += 1.0
-        return 100.0 * (max_coins - min_coins) / (max_coins + min_coins)
+        if PLY > 50:
+            return 100.0 * (max_coins - min_coins) / (max_coins + min_coins)
+        else:
+            return 0
 
     def field_bonus(self, board, field, player):
         """
@@ -240,10 +244,13 @@ class Board:
 
 
 def play(show=False):
+    global PLY
+    PLY = 0
     player = 0
     B = Board()
 
     while True:
+        PLY += 1
         if show:
             B.draw()
             B.show()
