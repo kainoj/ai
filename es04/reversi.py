@@ -10,8 +10,8 @@ THRESH = 58  # A ply threshold, uppon which CR_RES is considered
 
 DEPTH = 1
 CX_RES = 1.2  # * self.result()
-CX_FIE = 0  # * self.field_bonus(move, player)
-CX_COR = 800   # * self.corners_bonus(player)
+CX_FIE = 0    # * self.field_bonus(move, player)
+CX_COR = 800  # * self.corners_bonus(player)
 CX_PEN = 380  # * self.close_corner_penalty(player)
 
 
@@ -170,12 +170,10 @@ class Board:
         else:
             return 10e-11
 
-    def field_bonus(self, board, field, player):
+    def field_bonus(self, board, player):
         """
         https://web.stanford.edu/class/cs221/2017/restricted/p-final/man4/final.pdf
         """
-        if field is None:
-            return 0
         BONUS = [[16.16, -3.03, 0.99, 0.43, 0.43, 0.99, -3.03, 16.16],
                  [-4.12, -1.81, -0.08, -0.27, -0.27, -0.08, -1.81, -4.12],
                  [1.33, -0.04, 0.51, 0.07, 0.07, 0.51, -0.04, 1.33],
@@ -189,8 +187,8 @@ class Board:
             for j in range(8):
                 if board[i][j] == player:
                     bonus += BONUS[i][j]
-                # elif board[i][j] == MIN:
-                #     bonus -= BONUS[i][j]
+                elif board[i][j] == MIN:
+                    bonus -= BONUS[i][j]
         return bonus
 
     def corners_bonus(self, board, player):
@@ -225,9 +223,9 @@ class Board:
             penalty = 100.0 * (max_close - min_close)/(max_close + min_close)
         return -penalty
 
-    def bonus(self, board, move, player):
+    def bonus(self, board, player):
         bonus = CX_RES * self.result(board) + \
-                CX_FIE * self.field_bonus(board, move, player) +\
+                CX_FIE * self.field_bonus(board, player) +\
                 CX_COR * self.corners_bonus(board, player) +\
                 CX_PEN * self.close_corner_penalty(board, player)
         return bonus
@@ -245,6 +243,30 @@ class Board:
 
         res = moves1[level1.index(max(level1))]
         return res
+    
+    def awesomer_move(self, player):
+        moves = self.moves(player)
+        awesome = None
+        maxval = -INF
+        for m in moves:
+            v = self.bonus(self.lookup_move(self.board, m, player), player) + self.minmax(self.board, 1-player, DEPTH)
+            if v > maxval:
+                maxval = v
+                awesome = m
+        return awesome
+
+    def minmax(self, board, player, depth):
+        if depth == 0 or self.terminal():
+            return 0
+
+        values = [self.bonus(self.lookup_move(board, move, player), player) +
+                  self.minmax(self.lookup_move(board, move, player), 1 - player, depth-1)
+                  for move in self.moves(player)]
+
+        if player == MAX:
+            return max(values)
+        else:
+            return min(values)
 
 
 def play(show=False):
@@ -256,7 +278,7 @@ def play(show=False):
             B.draw()
             B.show()
         if player == MAX:
-            m = B.awesome_move(player)  # !!!!
+            m = B.awesomer_move(player)  # !!!!
         else:
             m = B.random_move(player)
         B.do_move(m, player)
