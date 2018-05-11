@@ -6,13 +6,13 @@ M = 8
 MAX = 1
 MIN = 0
 INF = 100000000
-PLY = 0
+THRESH = 58  # A ply threshold, uppon which CR_RES is considered
 
 DEPTH = 1
-CX_RES = 10  # * self.result()
+CX_RES = 1.2  # * self.result()
 CX_FIE = 0  # * self.field_bonus(move, player)
-CX_COR = 8   # * self.corners_bonus(player)
-CX_PEN = 6  # * self.close_corner_penalty(player)
+CX_COR = 800   # * self.corners_bonus(player)
+CX_PEN = 380  # * self.close_corner_penalty(player)
 
 
 def initial_board():
@@ -31,6 +31,7 @@ class Board:
         self.board = initial_board()
         self.fields = set()
         self.move_list = []
+        self.ply = 0
         for i in range(M):
             for j in range(M):
                 if self.board[i][j] is None:
@@ -89,6 +90,7 @@ class Board:
 
     def do_move(self, move, player):
         self.move_list.append(move)
+        self.ply += 1
 
         if move is None:
             return
@@ -163,10 +165,10 @@ class Board:
                     min_coins += 1.0
                 elif b == MAX:
                     max_coins += 1.0
-        if PLY > 50:
+        if self.ply > THRESH:
             return 100.0 * (max_coins - min_coins) / (max_coins + min_coins)
         else:
-            return 0
+            return 10e-11
 
     def field_bonus(self, board, field, player):
         """
@@ -185,10 +187,10 @@ class Board:
         bonus = 0
         for i in range(8):
             for j in range(8):
-                if board[i][j] == MAX:
+                if board[i][j] == player:
                     bonus += BONUS[i][j]
-                elif board[i][j] == MIN:
-                    bonus -= BONUS[i][j]
+                # elif board[i][j] == MIN:
+                #     bonus -= BONUS[i][j]
         return bonus
 
     def corners_bonus(self, board, player):
@@ -210,16 +212,18 @@ class Board:
                  (0, 7): [(0, 6), (1, 7), (1, 6)],  # top right
                  (7, 0): [(6, 0), (7, 1), (6, 1)],  # bot left
                  (7, 7): [(6, 7), (7, 6), (6, 6)]}  # bot right
-        close_diff = 0
+        min_close = max_close = 0
         for i, j in CLOSE:
             if board[i][j] is None:
                 for x, y in CLOSE[(i, j)]:
                     if board[x][y] == MAX:
-                        close_diff += 1.0
+                        max_close += 1.0
                     if board[x][y] == MIN:
-                        close_diff -= 1.0
-        penalty = -12.5 * (close_diff)
-        return penalty
+                        min_close += 1.0
+        penalty = 0
+        if (max_close + min_close != 0):
+            penalty = 100.0 * (max_close - min_close)/(max_close + min_close)
+        return -penalty
 
     def bonus(self, board, move, player):
         bonus = CX_RES * self.result(board) + \
@@ -244,13 +248,10 @@ class Board:
 
 
 def play(show=False):
-    global PLY
-    PLY = 0
     player = 0
     B = Board()
 
     while True:
-        PLY += 1
         if show:
             B.draw()
             B.show()
