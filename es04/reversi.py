@@ -8,10 +8,10 @@ MIN = 0
 INF = 100000000
 
 DEPTH = 1
-CX_RES = 10  # * self.result()
-CX_FIE = 10  # * self.field_bonus(move, player)
-CX_COR = 801.724   # * self.corners_bonus(player)
-CX_PEN = 0*382.026  # * self.close_corner_penalty(player)
+CX_RES = 0  # * self.result()
+CX_FIE = 0  # * self.field_bonus(move, player)
+CX_COR = 1801.724   # * self.corners_bonus(player)
+CX_PEN = 382.026  # * self.close_corner_penalty(player)
 
 
 def initial_board():
@@ -196,18 +196,24 @@ class Board:
 
             if board[i][j] == MIN:
                 min_corners += 1.0
-        bonus = 25 * (max_corners - min_corners)
+        bonus = 0
+        if max_corners + min_corners != 0:
+            bonus = 100*(max_corners - min_corners)/(max_corners + min_corners)
         return bonus
 
     def close_corner_penalty(self, board, player):
-        CLOSE = [(0, 1), (0, 6), (1, 0), (1, 7), (6, 0), (6, 7), (7, 1), (7, 6)]
+        CLOSE = {(0, 0): [(0, 1), (1, 0), (1, 1)],  # top left
+                 (0, 7): [(0, 6), (1, 7), (1, 6)],  # top right
+                 (7, 0): [(6, 0), (7, 1), (6, 1)],  # bot left
+                 (7, 7): [(6, 7), (7, 6), (6, 6)]}  # bot right
         close_diff = 0
         for i, j in CLOSE:
-            if board[i][j] == MAX:
-                close_diff += 1.0
-            if board[i][j] == MIN:
-                close_diff -= 1.0
-
+            if board[i][j] is None:
+                for x, y in CLOSE[(i, j)]:
+                    if board[x][y] == MAX:
+                        close_diff += 1.0
+                    if board[x][y] == MIN:
+                        close_diff -= 1.0
         penalty = -12.5 * (close_diff)
         return penalty
 
