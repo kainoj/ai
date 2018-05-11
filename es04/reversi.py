@@ -30,7 +30,6 @@ class Board:
         self.board = initial_board()
         self.fields = set()
         self.move_list = []
-        self.history = []
         for i in range(M):
             for j in range(M):
                 if self.board[i][j] is None:
@@ -88,7 +87,6 @@ class Board:
         return None
 
     def do_move(self, move, player):
-        self.history.append([x[:] for x in self.board])
         self.move_list.append(move)
 
         if move is None:
@@ -110,27 +108,34 @@ class Board:
                 for (nx, ny) in to_beat:
                     self.board[ny][nx] = player
 
-    def undo_move(self):
-        if self.history:
-            self.board = self.history.pop()
-        if self.move_list:
-            x = self.move_list.pop()
-            if x:
-                self.fields.add(x)
+    def lookup_get(self, board, x, y):
+        if 0 <= x < M and 0 <= y < M:
+            return board[y][x]
+        return None
 
-    def result(self):
-        """
-        result = #black - #white
-        """
-        max_coins = min_coins = 0.0
-        for y in range(M):
-            for x in range(M):
-                b = self.board[y][x]
-                if b == MIN:
-                    min_coins += 1.0
-                elif b == MAX:
-                    max_coins += 1.0
-        return 100.0 * (max_coins - min_coins) / (max_coins + min_coins)
+    def lookup_move(self, board, move, player):
+        new_board = [x[:] for x in board]
+
+        if move is None:
+            return new_board
+
+        x, y = move
+        x0, y0 = move
+        new_board[y][x] = player
+
+        for dx, dy in self.dirs:
+            x, y = x0, y0
+            to_beat = []
+            x += dx
+            y += dy
+            while self.lookup_get(board, x, y) == 1 - player:
+                to_beat.append((x, y))
+                x += dx
+                y += dy
+            if self.lookup_get(board, x, y) == player:
+                for (nx, ny) in to_beat:
+                    new_board[ny][nx] = player
+        return new_board
 
     def terminal(self):
         if not self.fields:
@@ -145,7 +150,21 @@ class Board:
             return random.choice(ms)
         return [None]
 
-    def field_bonus(self, field, player):
+    def result(self, board):
+        """
+        result = #black - #white
+        """
+        max_coins = min_coins = 0.0
+        for y in range(M):
+            for x in range(M):
+                b = board[y][x]
+                if b == MIN:
+                    min_coins += 1.0
+                elif b == MAX:
+                    max_coins += 1.0
+        return 100.0 * (max_coins - min_coins) / (max_coins + min_coins)
+
+    def field_bonus(self, board, field, player):
         """
         https://web.stanford.edu/class/cs221/2017/restricted/p-final/man4/final.pdf
         """
@@ -162,113 +181,56 @@ class Board:
         bonus = 0
         for i in range(8):
             for j in range(8):
-                if self.board[i][j] == MAX:
+                if board[i][j] == MAX:
                     bonus += BONUS[i][j]
-                elif self.board[i][j] == MIN:
+                elif board[i][j] == MIN:
                     bonus -= BONUS[i][j]
         return bonus
-        # if player == MAX:
-        #     return bonus
-        # return -bonus
 
-    def corners_bonus(self, player):
+    def corners_bonus(self, board, player):
         CORNERS = [(0, 0), (0, 7), (7, 0), (7, 7)]
         max_corners = min_corners = 0.0
         for i, j in CORNERS:
-            if self.board[i][j] == MAX:
+            if board[i][j] == MAX:
                 max_corners += 1.0
 
-            if self.board[i][j] == MIN:
+            if board[i][j] == MIN:
                 min_corners += 1.0
         bonus = 25 * (max_corners - min_corners)
         return bonus
-        # if player == MAX:
-        #     return bonus
-        # return -bonus
 
-    def close_corner_penalty(self, player):
+    def close_corner_penalty(self, board, player):
         CLOSE = [(0, 1), (0, 6), (1, 0), (1, 7), (6, 0), (6, 7), (7, 1), (7, 6)]
         close_diff = 0
         for i, j in CLOSE:
-            if self.board[i][j] == MAX:
+            if board[i][j] == MAX:
                 close_diff += 1.0
-            if self.board[i][j] == MIN:
+            if board[i][j] == MIN:
                 close_diff -= 1.0
 
         penalty = -12.5 * (close_diff)
         return penalty
-        # if player == MAX:
-        #     return penalty
-        # return -penalty
 
-    def bonus(self, move, player):
-        bonus = CX_RES * self.result() + \
-                CX_FIE * self.field_bonus(move, player) +\
-                CX_COR * self.corners_bonus(player) +\
-                CX_PEN * self.close_corner_penalty(player)
+    def bonus(self, board, move, player):
+        bonus = CX_RES * self.result(board) + \
+                CX_FIE * self.field_bonus(board, move, player) +\
+                CX_COR * self.corners_bonus(board, player) +\
+                CX_PEN * self.close_corner_penalty(board, player)
         return bonus
 
     def awesome_move(self, player):
-        player2 = 1 - player
-
-        # Depth-3 recursion  hardcoded in for loops
-
+        # Depth-1 recursion  hardcoded in for loops
         level1 = []
         moves1 = self.moves(player)
 
         # Player moves - MAX
         for move in [m for m in moves1]:
-            self.do_move(move, player)
-            level2min = INF
-
-            # Player2 moves - MIN
-            for move2 in [m for m in self.moves(player2)]:
-                self.do_move(move2, player2)
-                level3max = -INF
-
-                # Player moves - MAX
-                for move3 in [m for m in self.moves(player)]:
-                    self.do_move(move3, player)
-                    bon = self.bonus(move3, player) \
-                        + self.bonus(move2, player2) \
-                        + self.bonus(move, player)
-                    if bon > level3max:
-                        level3max = bon
-                    self.undo_move()
-                if level3max < level2min:
-                    level2min = level3max
-                self.undo_move()
-            level1.append(level2min)
-            self.undo_move()
+            board_1 = self.lookup_move(self.board, move, player)
+            bon = self.bonus(board_1, move, player)
+            level1.append(bon)
 
         res = moves1[level1.index(max(level1))]
         return res
-
-    def awesomer_move(self, player):
-        moves = self.moves(player)
-        awesome = None
-        maxval = -10000
-        for m in moves:
-            self.do_move(m, player)
-            v = self.bonus(m, player) + self.minmax(1-player, DEPTH)
-            self.undo_move()
-            if v > maxval:
-                maxval = v
-                awesome = m
-        return awesome
-
-    def minmax(self, player, depth):
-        if depth == 0 or self.terminal():
-            return self.result()
-
-        values = [self.bonus(move, player) +
-                  self.minmax(1 - player, depth-1)
-                  for move in self.moves(player)]
-
-        if player == MAX:
-            return max(values)
-        else:
-            return min(values)
 
 
 def play(show=False):
@@ -293,10 +255,10 @@ def play(show=False):
     if show:
         B.draw()
         B.show()
-        print('Result', B.result())
+        print('Result', B.result(B.board))
         input('Game over!')
         sys.exit(0)
-    return B.result()
+    return B.result(B.board)
 
 
 if __name__ == "__main__":
