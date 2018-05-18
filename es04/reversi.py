@@ -8,7 +8,7 @@ MIN = 0
 INF = 100000000
 THRESH = 58  # A ply threshold, uppon which CR_RES is considered
 
-DEPTH = 1
+DEPTH = 2
 CX_RES = 1.2  # * self.result()
 CX_FIE = 0    # * self.field_bonus(move, player)
 CX_COR = 800  # * self.corners_bonus(player)
@@ -238,26 +238,33 @@ class Board:
         # Player moves - MAX
         for move in [m for m in moves1]:
             board_1 = self.lookup_move(self.board, move, player)
-            bon = self.bonus(board_1, move, player)
+            bon = self.bonus(board_1, player)
             level1.append(bon)
 
         res = moves1[level1.index(max(level1))]
         return res
-    
+
     def awesomer_move(self, player):
+        """
+        Recursive minmax decision algorithm
+        """
         moves = self.moves(player)
         awesome = None
         maxval = -INF
         for m in moves:
-            v = self.bonus(self.lookup_move(self.board, m, player), player) + self.minmax(self.board, 1-player, DEPTH)
+            v = self.bonus(self.lookup_move(self.board, m, player), player) \
+                + self.minmax(self.board, 1-player, DEPTH)
             if v > maxval:
                 maxval = v
                 awesome = m
         return awesome
 
     def minmax(self, board, player, depth):
-        if depth == 0 or self.terminal():
+        if depth == 0:
             return 0
+
+        if self.terminal():
+            return self.bonus(board, player)
 
         values = [self.bonus(self.lookup_move(board, move, player), player) +
                   self.minmax(self.lookup_move(board, move, player), 1 - player, depth-1)
@@ -278,7 +285,7 @@ def play(show=False):
             B.draw()
             B.show()
         if player == MAX:
-            m = B.awesomer_move(player)  # !!!!
+            m = B.awesome_move(player)  # !!!!
         else:
             m = B.random_move(player)
         B.do_move(m, player)
