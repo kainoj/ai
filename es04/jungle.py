@@ -30,6 +30,15 @@ FREE = '.'
 DEN = '*'
 POND = '~'
 
+BEATS_TRESH = 50
+
+DEBUG = True
+
+
+def dprint(string):
+    if DEBUG is True:
+        print(string)
+
 
 class Player():
 
@@ -42,6 +51,17 @@ class Player():
 
     def figure_loss(self, figure):
         self.figures.pop(figure)
+
+    def get_strongest(self):
+        return max([FIGURES[f.upper()] for f in self.figures.keys()])
+
+    def dists_to_trap(self, board):
+        # Trap coords
+        tx, ty = (0, 3) if self.id == P1 else (8, 3)
+        return sorted([abs(tx - fx) + abs(ty - fy) for fx, fy in self.figures.values()])
+
+    def no_figures(self):
+        return self.figures == set()
 
 
 class Jungle():
@@ -60,6 +80,8 @@ class Jungle():
 
         self.player_0 = Player(P0, self.board)
         self.player_1 = Player(P1, self.board)
+
+        self.no_beats = 0
 
     def get_fig(self, field):
         x, y = field
@@ -221,14 +243,60 @@ class Jungle():
         # Unpack a move
         (fig, (src_x, src_y)), (dst_x, dst_y) = move
 
+        self.no_beats += 1
+
         if self.is_free(self.board, (dst_x, dst_y)) is False:
             print("{} bije {}".format(fig, self.get_fig((dst_x, dst_y))))
             opp.figure_loss(self.get_fig((dst_x, dst_y)))
+            self.no_beats = 0
 
         self.board[src_x][src_y] = BOARD[src_x][src_y]
         self.board[dst_x][dst_y] = fig
 
         p.figures[fig] = (dst_x, dst_y)
+    
+    def terminal(self):
+        # One of the player lacks figures
+        if self.player_0.no_figures():
+            dprint("P0 has no figures")
+            return P1
+        if self.player_1.no_figures():
+            dprint("P1 has no figures")
+            return P0
+
+        # A trap is taken
+        if self.board[0][3] != FREE:
+            dprint("P1 has taken a den")
+            return P1
+        if self.board[8][3] != FREE:
+            dprint("P0 has taken a den")
+            return P0
+
+        # Game lasts too long
+        if self.no_beats > BEATS_TRESH:
+            p0strong = self.player_0.get_strongest()
+            p1strong = self.player_1.get_strongest()
+            if p0strong > p1strong:
+                dprint("P0 has a better figure")
+                return P0
+            if p1strong > p0strong:
+                dprint("P1 has a better figure")
+                return P1
+
+            p0trap_dist = self.player_0.dists_to_trap(self.board)
+            p1trap_dist = self.player_1.dists_to_trap(self.board)
+
+            for i in range(min(len(p0trap_dist), len(p1trap_dist))):
+                if p0trap_dist[i] > p1trap_dist[i]:
+                    dprint("P0 is closer to den")
+                    return P0
+                if p1trap_dist[i] > p0trap_dist[i]:
+                    dprint("P1 is closer to den")                    
+                    return P1
+            print("P1 moved second")
+            return P1  # because P0 always moves 1st
+
+        return None
 
     def play(self):
         player = P0
@@ -243,10 +311,17 @@ class Jungle():
             print(sorted(self.player_0.figures.keys()))
             print(sorted(self.player_1.figures.keys()))
 
-            input()
+            # input()
             os.system('cls' if os.name == 'nt' else 'clear')
 
             self.do_move(move, player)
+
+            term = self.terminal()
+            if term is not None:
+                print(self)
+                print("Player{} wins!".format(term))
+                return term
+
             player = 1 - player
 
     def __str__(self):
