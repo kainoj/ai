@@ -6,3 +6,6 @@ reversi:
 
 reversiplay:
 	python3 reversi.py
+
+jungle:
+	python3 jungle.py
