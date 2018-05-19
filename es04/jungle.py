@@ -17,7 +17,7 @@ LION = 'L'
 ELEPHANT = 'E'
 FIGURES = {RAT: 0, 'C': 1, 'D': 2, 'W': 3, 'J': 4, TIGER: 5, LION: 6, ELEPHANT: 7}
 
-DIRS = {'U': (0, -1), 'D': (0, 1), 'R': (1, 0), 'L': (-1, 0)}
+DIRS = {(0, -1), (0, 1), (1, 0), (-1, 0)}
 
 P0 = 0  # Player 0
 P1 = 1  # Player 1
@@ -158,7 +158,7 @@ class Jungle():
                 (on condition there's no opponent's rat on predator's way)
         """
         x, y = field
-        predator = board[x][x]
+        predator = board[x][y]
         while True:
             x, y = x + dir_x, y + dir_y
             if self.on_board(board, (x, y)) is False:
@@ -170,6 +170,26 @@ class Jungle():
             if self.is_meadow((x, y)):
                 return (x, y)
 
+    def get_neighbour(self, board, figure, field, direction, player):
+        x, y = field
+        a, b = direction
+        neighbour = (x+a, y+b)
+        if self.on_board(board, neighbour) is False:
+            return None
+
+        if self.is_free_meadow(board, neighbour) or \
+           self.is_free_trap(board, neighbour) or \
+           self.is_opp_den(board, neighbour, player):
+            return neighbour
+
+        if self.is_rat(figure) and self.is_free_pond(board, neighbour):
+            return neighbour
+
+        if self.is_predator(figure) and self.is_meadow(neighbour):
+            return self.predator_jumps(board, field, a, b)
+
+        return None
+
     def get_moves(self, board, player):
         """
         Return list of (f, (x, y)) → figure f can move to (x, y)
@@ -179,20 +199,10 @@ class Jungle():
         for figure in player.figures.items():
             fig, field = figure
             x, y = field
-            for a, b in sorted(DIRS.values()):
-                neighbour = (x+a, y+b)
-                if self.on_board(board, neighbour):
-                    # A field is free
-                    if self.is_free_meadow(board, neighbour) or self.is_free_trap(board, neighbour) or self.is_opp_den(board, neighbour, player):
-                        moves.append((figure, neighbour))
-
-                    elif self.is_free_pond(board, neighbour) and self.is_rat(fig):
-                        moves.append((figure, neighbour))
-
-                    elif self.is_free_pond(board, neighbour) and self.is_predator(fig):
-                        jump = self.predator_jumps(board, field, a, b)
-                        if jump is not None:
-                            moves.append((figure, jump))
+            for direction in DIRS:
+                neighbour = self.get_neighbour(board, fig, field, direction, player)
+                if neighbour is not None:
+                    moves.append((figure, neighbour))
         # TODO move if can beat
         return moves
 
@@ -218,6 +228,9 @@ class Jungle():
             ((fig, src), dst) = move
             print("next move: {}: {} → {}".format(fig, src, dst))
             print(self)
+            print(sorted(self.player_0.figures.keys()))
+            print(sorted(self.player_1.figures.keys()))
+
             input()
             os.system('cls' if os.name == 'nt' else 'clear')
 
