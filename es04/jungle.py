@@ -112,7 +112,7 @@ class Jungle():
     def is_pond(self, board, field):
         x, y = field
         return BOARD[x][y] == POND and board[x][y] == FREE
-    
+
     def is_rat(self, fig):
         return fig.upper() == RAT
 
@@ -121,7 +121,7 @@ class Jungle():
         A predator = lion or tiger
         """
         return fig.upper() == LION or fig.upper() == TIGER
-    
+
     def is_opponent(self, fig1, fig2):
         return fig1.islower() and fig2.isupper() or fig1.isupper() and fig2.islower()
 
@@ -172,7 +172,6 @@ class Jungle():
     def do_move(self, move, player):
         p = self.player_0 if player == P0 else self.player_1
         (fig, (src_x, src_y)), (dst_x, dst_y) = move
-        # dst_x, dst_y = dst
         self.board[src_x][src_y] = BOARD[src_x][src_y]
         self.board[dst_x][dst_y] = fig
 
@@ -195,16 +194,14 @@ class Jungle():
             player = 1 - player
 
     def __str__(self):
-        res = ["  0123456"]
-        for i in range(N):
-            row = []
-            row.append(str(i)+ " ")
-            for j in range(M):
-                if self.board[i][j] != '.':
-                    row.append(self.board[i][j])
-                else:
-                    row.append(BOARD[i][j])
-            res.append(row)
+        res = [b[:] + [" ", str(i)] for i, b in enumerate(BOARD)]
+        for fig, (a, b) in self.player_0.figures.items():
+            res[a][b] = fig
+
+        for fig, (a, b) in self.player_1.figures.items():
+            res[a][b] = fig
+
+        res = ["0123456"] + res
         return '\n'.join(''.join(roww) for roww in res)
 
     def __repr__(self):
@@ -214,9 +211,7 @@ class Jungle():
 if __name__ == "__main__":
     jungle = Jungle()
     print(jungle)
-    
     print(jungle.player_0.figures)
     print(jungle.player_1.figures)
 
-    # jungle.get_moves(jungle.board, jungle.player_1)
     jungle.play()
