@@ -1,5 +1,6 @@
 import random
 import os
+import copy
 
 BOARD = [list(row) for row in
          ['..#*#..',  # meadow: .
@@ -11,6 +12,18 @@ BOARD = [list(row) for row in
           '.......',
           '...#...',
           '..#*#..']]
+
+INIT_BOARD = [list(row) for row in
+              ['L.....T',  # P0  (capital)
+               '.D...C.',
+               'R.J.W.E',
+               '.......',
+               '.......',
+               '.......',
+               'e.w.j.r',
+               '.c...d.',
+               't.....l']]
+
 RAT = 'R'
 TIGER = 'T'
 LION = 'L'
@@ -40,6 +53,20 @@ def dprint(string):
         print(string)
 
 
+class State():
+    def __init__(self, board, p0, p1, whos_now, no_beats):
+        self.player_0 = copy.deepcopy(p0)
+        self.player_1 = copy.deepcopy(p1)
+        self.whos_now = copy.deepcopy(whos_now)
+        self.board = [b[:] for b in board]
+        self.no_beats = no_beats
+
+    def whos_next(self):
+        if self.whos_now.id == P0:
+            return self.player_1
+        return self.player_0
+
+
 class Player():
 
     def __init__(self, id, board):
@@ -67,25 +94,14 @@ class Player():
 class Jungle():
 
     def __init__(self):
-        self.board = ['L.....T',  # P0  (capital)
-                      '.D...C.',
-                      'R.J.W.E',
-                      '.......',
-                      '.......',
-                      '.......',
-                      'e.w.j.r',
-                      '.c...d.',
-                      't.....l']  # P1
-        self.board = [list(row) for row in self.board]
-
-        self.player_0 = Player(P0, self.board)
-        self.player_1 = Player(P1, self.board)
-
-        self.no_beats = 0
+        self.s = State(INIT_BOARD,
+                       Player(P0, INIT_BOARD),
+                       Player(P1, INIT_BOARD),
+                       P0, BEATS_TRESH)
 
     def get_fig(self, field):
         x, y = field
-        return self.board[x][y]
+        return self.s.board[x][y]
 
     def can_beat(self, fig, fig_pos, neigh_pos):
         """
@@ -232,50 +248,50 @@ class Jungle():
         return moves
 
     def random_move(self, board, player):
-        p = self.player_0 if player == P0 else self.player_1
+        p = self.s.player_0 if player == P0 else self.s.player_1
         return random.choice(self.get_moves(board, p))
 
     def do_move(self, move, player_id):
         # Get a player based on it's id
-        p = self.player_0 if player_id == P0 else self.player_1
-        opp = self.player_0 if player_id == P1 else self.player_1
+        p = self.s.player_0 if player_id == P0 else self.s.player_1
+        opp = self.s.player_0 if player_id == P1 else self.s.player_1
 
         # Unpack a move
         (fig, (src_x, src_y)), (dst_x, dst_y) = move
 
-        self.no_beats += 1
+        self.s.no_beats += 1
 
-        if self.is_free(self.board, (dst_x, dst_y)) is False:
+        if self.is_free(self.s.board, (dst_x, dst_y)) is False:
             print("{} bije {}".format(fig, self.get_fig((dst_x, dst_y))))
             opp.figure_loss(self.get_fig((dst_x, dst_y)))
-            self.no_beats = 0
+            self.s.no_beats = 0
 
-        self.board[src_x][src_y] = BOARD[src_x][src_y]
-        self.board[dst_x][dst_y] = fig
+        self.s.board[src_x][src_y] = BOARD[src_x][src_y]
+        self.s.board[dst_x][dst_y] = fig
 
         p.figures[fig] = (dst_x, dst_y)
     
     def terminal(self):
         # One of the player lacks figures
-        if self.player_0.no_figures():
+        if self.s.player_0.no_figures():
             dprint("P0 has no figures")
             return P1
-        if self.player_1.no_figures():
+        if self.s.player_1.no_figures():
             dprint("P1 has no figures")
             return P0
 
         # A trap is taken
-        if self.board[0][3] != FREE:
+        if self.s.board[0][3] != FREE:
             dprint("P1 has taken a den")
             return P1
-        if self.board[8][3] != FREE:
+        if self.s.board[8][3] != FREE:
             dprint("P0 has taken a den")
             return P0
 
         # Game lasts too long
-        if self.no_beats > BEATS_TRESH:
-            p0strong = self.player_0.get_strongest()
-            p1strong = self.player_1.get_strongest()
+        if self.s.no_beats > BEATS_TRESH:
+            p0strong = self.s.player_0.get_strongest()
+            p1strong = self.s.player_1.get_strongest()
             if p0strong > p1strong:
                 dprint("P0 has a better figure")
                 return P0
@@ -283,33 +299,37 @@ class Jungle():
                 dprint("P1 has a better figure")
                 return P1
 
-            p0trap_dist = self.player_0.dists_to_trap(self.board)
-            p1trap_dist = self.player_1.dists_to_trap(self.board)
+            p0trap_dist = self.s.player_0.dists_to_trap(self.s.board)
+            p1trap_dist = self.s.player_1.dists_to_trap(self.s.board)
 
             for i in range(min(len(p0trap_dist), len(p1trap_dist))):
                 if p0trap_dist[i] > p1trap_dist[i]:
                     dprint("P0 is closer to den")
                     return P0
                 if p1trap_dist[i] > p0trap_dist[i]:
-                    dprint("P1 is closer to den")                    
+                    dprint("P1 is closer to den")
                     return P1
             print("P1 moved second")
             return P1  # because P0 always moves 1st
 
         return None
 
-    def play(self):
-        player = P0
+    def random_game(self, player):
+        """
+        Play a random game from a current state and afterall restore init state
+        """
+        # Do backup or current state
+        # backup = JungleState(self.s.player_0, self.s.player_1, player, self.s,board, self.no_beats)
         while True:
             if player == P0:
-                move = self.random_move(self.board, player)
+                move = self.random_move(self.s.board, player)
             else:
-                move = self.random_move(self.board, player)
+                move = self.random_move(self.s.board, player)
             ((fig, src), dst) = move
             print("next move: {}: {} → {}".format(fig, src, dst))
             print(self)
-            print(sorted(self.player_0.figures.keys()))
-            print(sorted(self.player_1.figures.keys()))
+            print(sorted(self.s.player_0.figures.keys()))
+            print(sorted(self.s.player_1.figures.keys()))
 
             # input()
             os.system('cls' if os.name == 'nt' else 'clear')
@@ -320,16 +340,19 @@ class Jungle():
             if term is not None:
                 print(self)
                 print("Player{} wins!".format(term))
+                # Restore backup
+               # # self.
+
                 return term
 
             player = 1 - player
 
     def __str__(self):
         res = [b[:] + [" ", str(i)] for i, b in enumerate(BOARD)]
-        for fig, (a, b) in self.player_0.figures.items():
+        for fig, (a, b) in self.s.player_0.figures.items():
             res[a][b] = fig
 
-        for fig, (a, b) in self.player_1.figures.items():
+        for fig, (a, b) in self.s.player_1.figures.items():
             res[a][b] = fig
 
         res = ["0123456"] + res
@@ -342,7 +365,7 @@ class Jungle():
 if __name__ == "__main__":
     jungle = Jungle()
     print(jungle)
-    print(jungle.player_0.figures)
-    print(jungle.player_1.figures)
+    print(jungle.s.player_0.figures)
+    print(jungle.s.player_1.figures)
 
-    jungle.play()
+    jungle.random_game(P0)
