@@ -14,7 +14,8 @@ BOARD = [list(row) for row in
 RAT = 'R'
 TIGER = 'T'
 LION = 'L'
-FIGURES = {RAT: 0, 'C': 1, 'D': 2, 'W': 3, 'J': 4, TIGER: 5, LION: 6, 'E': 7}
+ELEPHANT = 'E'
+FIGURES = {RAT: 0, 'C': 1, 'D': 2, 'W': 3, 'J': 4, TIGER: 5, LION: 6, ELEPHANT: 7}
 
 DIRS = {'U': (0, -1), 'D': (0, 1), 'R': (1, 0), 'L': (-1, 0)}
 
@@ -43,78 +44,95 @@ class Player():
 class Jungle():
 
     def __init__(self):
-        self.boad = ['L.....T',  # P0  (capital)
-                     '.D...C.',
-                     'R.J.W.E',
-                     '.......',
-                     '.......',
-                     '.......',
-                     'e.w.j.r',
-                     '.c...d.',
-                     't.....l']  # P1
+        self.board = ['L.....T',  # P0  (capital)
+                      '.D...C.',
+                      'R.J.W.E',
+                      '.......',
+                      '.......',
+                      '.......',
+                      'e.w.j.r',
+                      '.c...d.',
+                      't.....l']  # P1
 
-        # self.boad = ['L.....T',  # P0
-        #              '.D...C.',
-        #              '..J.W.E',
-        #              '.....t.',
-        #              '.r...R.',
-        #              '.......',
-        #              'e.w.j..',
-        #              '.c...d.',
-        #              '......l']  # P1
-        self.board = [list(row) for row in self.boad]
+        # self.board = ['L......',  # P0  (capital)
+        #               '.D...C.',
+        #               'R.J.WTE',
+        #               '.......',
+        #               '.......',
+        #               '.......',
+        #               'e.w.j.r',
+        #               '.c...d.',
+        #               't.....l']  # P1
+        self.board = [list(row) for row in self.board]
 
-        self.player_0 = Player(P0, self.boad)
-        self.player_1 = Player(P1, self.boad)
+        self.player_0 = Player(P0, self.board)
+        self.player_1 = Player(P1, self.board)
 
-    def can_beat(self, fig1, fig2, fig2pos):
+    def can_beat(self, fig, fig_pos, neigh, neigh_pos):
         """
-        Can `fig1` beat `fig2`? (is fig1 equal or stronger than fig2)?
+        Can `figure` beat `neigh`? (is figure equal or stronger than neigh)?
+        Assuming neigh is an opponent of figure
         """
-        # If fig2 is in a trap
-        if self.isTrap(fig2pos):
-            return True
+        if self.is_opponent(fig, neigh) is False:
+            return False
 
-        fig1 = fig1.upper()
-        fig2 = fig2.upper()
-
-        if fig1 == 'R' and fig2 == 'E':
+        # If neigh is in a trap
+        if self.is_trap(neigh_pos):
             return True
-        return FIGURES[fig1] >= FIGURES[fig2]
+        
+        # Rat which is in the pond cannot beat neigh on a meadow 
+        if self.is_rat(fig) and self.is_pond(fig_pos) and self.is_meadow(neigh):
+            return False
+
+        if self.is_rat(fig) and self.is_elephant(neigh):
+            return True
+        return FIGURES[fig.upper()] >= FIGURES[neigh.upper()]
+
+
+    ####################################################
+    #    Boolean functions determining current state   #
+    ####################################################
 
     def on_board(self, board, field):
         x, y = field
         return 0 <= x and x < 9 and 0 <= y and y < 7
 
-    def is_meadow(self, board, field):
+    def is_free(self, board, field):
         """
-        Check if BASIC move is allowed (a field is a meadow)
+        Is a field in a current state free?
         """
         x, y = field
-        return BOARD[x][y] == FREE and board[x][y] == FREE
+        return board[x][y] == FREE
+
+    def is_meadow(self, field):
+        x, y = field
+        return BOARD[x][y] == FREE
+
+    def is_free_meadow(self, board, field):
+        return self.is_free(board, field) and self.is_meadow(field)
+
+    def is_trap(self, field):
+        x, y = field
+        return BOARD[x][y] == TRAP
 
     def is_free_trap(self, board, field):
         """
         Check if a `field` is a free field which is a trap
         """
-        x, y = field
-        return BOARD[x][y] == TRAP and board[x][y] == FREE
+        return self.is_free(board, field) and self.is_trap(field)
 
-    def is_opp_den(self, board, field, player):
-        """
-        Check wheather the field is opponent's den (→ win)
-        """
+    def is_pond(self, field):
         x, y = field
-        p0wins = (player.id == P0 and x > N / 2)
-        p1wins = (player.id == P1 and x == 0)
-        return BOARD[x][y] == DEN and (p0wins or p1wins)
+        return BOARD[x][y] == POND
 
-    def is_pond(self, board, field):
-        x, y = field
-        return BOARD[x][y] == POND and board[x][y] == FREE
+    def is_free_pond(self, board, field):
+        return self.is_free(board, field) and self.is_pond(field)
 
     def is_rat(self, fig):
         return fig.upper() == RAT
+    
+    def is_elephant(self, fig):
+        return fig.upper() == ELEPHANT
 
     def is_predator(self, fig):
         """
@@ -124,8 +142,21 @@ class Jungle():
 
     def is_opponent(self, fig1, fig2):
         return fig1.islower() and fig2.isupper() or fig1.isupper() and fig2.islower()
+    
+    def is_opp_den(self, board, field, player):
+        """
+        Check wheather the field is opponent's den (→ win)
+        """
+        x, y = field
+        p0wins = (player.id == P0 and x > N / 2)
+        p1wins = (player.id == P1 and x == 0)
+        return BOARD[x][y] == DEN and (p0wins or p1wins)
 
     def predator_jumps(self, board, field, dir_x, dir_y):
+        """
+        TODO: returns a field which is on the opposite site of the pond
+                (on condition there's no opponent's rat on predator's way)
+        """
         x, y = field
         predator = board[x][x]
         while True:
@@ -136,13 +167,12 @@ class Jungle():
             neigh = board[x][y]
             if self.is_rat(neigh) and self.is_opponent(predator, neigh):
                 return None
-            if self.is_meadow(board, (x, y)):
+            if self.is_meadow((x, y)):
                 return (x, y)
-            # TODO: bicie przy wyjściu z wody
 
     def get_moves(self, board, player):
         """
-        Return list of (f, (x, y)) = figure f can move to (x, y)
+        Return list of (f, (x, y)) → figure f can move to (x, y)
         f is a tuple in form of (animal, (pos_x, pos_y))
         """
         moves = []
@@ -152,13 +182,14 @@ class Jungle():
             for a, b in sorted(DIRS.values()):
                 neighbour = (x+a, y+b)
                 if self.on_board(board, neighbour):
-                    if self.is_meadow(board, neighbour) or self.is_free_trap(board, neighbour) or self.is_opp_den(board, neighbour, player):
+                    # A field is free
+                    if self.is_free_meadow(board, neighbour) or self.is_free_trap(board, neighbour) or self.is_opp_den(board, neighbour, player):
                         moves.append((figure, neighbour))
 
-                    if self.is_pond(board, neighbour) and self.is_rat(fig):
+                    elif self.is_free_pond(board, neighbour) and self.is_rat(fig):
                         moves.append((figure, neighbour))
 
-                    if self.is_pond(board, neighbour) and self.is_predator(fig):
+                    elif self.is_free_pond(board, neighbour) and self.is_predator(fig):
                         jump = self.predator_jumps(board, field, a, b)
                         if jump is not None:
                             moves.append((figure, jump))
