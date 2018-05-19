@@ -40,6 +40,9 @@ class Player():
                         if id == P0 and elem.isupper()
                         or id == P1 and elem.islower()}
 
+    def figure_loss(self, figure):
+        self.figures.pop(figure)
+
 
 class Jungle():
 
@@ -53,26 +56,20 @@ class Jungle():
                       'e.w.j.r',
                       '.c...d.',
                       't.....l']  # P1
-
-        # self.board = ['L......',  # P0  (capital)
-        #               '.D...C.',
-        #               'R.J.WTE',
-        #               '.......',
-        #               '.......',
-        #               '.......',
-        #               'e.w.j.r',
-        #               '.c...d.',
-        #               't.....l']  # P1
         self.board = [list(row) for row in self.board]
 
         self.player_0 = Player(P0, self.board)
         self.player_1 = Player(P1, self.board)
 
-    def can_beat(self, fig, fig_pos, neigh, neigh_pos):
+    def get_fig(self, field):
+        x, y = field
+        return self.board[x][y]
+
+    def can_beat(self, fig, fig_pos, neigh_pos):
         """
         Can `figure` beat `neigh`? (is figure equal or stronger than neigh)?
-        Assuming neigh is an opponent of figure
         """
+        neigh = self.get_fig(neigh_pos)
         if self.is_opponent(fig, neigh) is False:
             return False
 
@@ -81,7 +78,7 @@ class Jungle():
             return True
         
         # Rat which is in the pond cannot beat neigh on a meadow 
-        if self.is_rat(fig) and self.is_pond(fig_pos) and self.is_meadow(neigh):
+        if self.is_rat(fig) and self.is_pond(fig_pos) and self.is_meadow(neigh_pos):
             return False
 
         if self.is_rat(fig) and self.is_elephant(neigh):
@@ -171,21 +168,24 @@ class Jungle():
                 return (x, y)
 
     def get_neighbour(self, board, figure, field, direction, player):
+        """
+        Return all possible would-be fields, into which the figure can move
+        """
         x, y = field
         a, b = direction
         neighbour = (x+a, y+b)
         if self.on_board(board, neighbour) is False:
             return None
 
-        if self.is_free_meadow(board, neighbour) or \
-           self.is_free_trap(board, neighbour) or \
+        if self.is_meadow(neighbour) or \
+           self.is_trap(neighbour) or \
            self.is_opp_den(board, neighbour, player):
             return neighbour
 
-        if self.is_rat(figure) and self.is_free_pond(board, neighbour):
+        if self.is_rat(figure) and self.is_pond(neighbour):
             return neighbour
 
-        if self.is_predator(figure) and self.is_meadow(neighbour):
+        if self.is_predator(figure) and self.is_pond(neighbour):
             return self.predator_jumps(board, field, a, b)
 
         return None
@@ -198,11 +198,14 @@ class Jungle():
         moves = []
         for figure in player.figures.items():
             fig, field = figure
-            x, y = field
             for direction in DIRS:
-                neighbour = self.get_neighbour(board, fig, field, direction, player)
-                if neighbour is not None:
-                    moves.append((figure, neighbour))
+                neigh_pos = self.get_neighbour(board, fig, field, direction, player)
+                if neigh_pos is not None:
+                    if self.is_free(board, neigh_pos):
+                        moves.append((figure, neigh_pos))
+                    elif self.can_beat(fig, field, neigh_pos):
+                        moves.append((figure, neigh_pos))
+
         # TODO move if can beat
         return moves
 
@@ -210,9 +213,18 @@ class Jungle():
         p = self.player_0 if player == P0 else self.player_1
         return random.choice(self.get_moves(board, p))
 
-    def do_move(self, move, player):
-        p = self.player_0 if player == P0 else self.player_1
+    def do_move(self, move, player_id):
+        # Get a player based on it's id
+        p = self.player_0 if player_id == P0 else self.player_1
+        opp = self.player_0 if player_id == P1 else self.player_1
+
+        # Unpack a move
         (fig, (src_x, src_y)), (dst_x, dst_y) = move
+
+        if self.is_free(self.board, (dst_x, dst_y)) is False:
+            print("{} bije {}".format(fig, self.get_fig((dst_x, dst_y))))
+            opp.figure_loss(self.get_fig((dst_x, dst_y)))
+
         self.board[src_x][src_y] = BOARD[src_x][src_y]
         self.board[dst_x][dst_y] = fig
 
