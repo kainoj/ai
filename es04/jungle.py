@@ -44,9 +44,15 @@ DEN = '*'
 POND = '~'
 
 BEATS_TRESH = 50
-MOVES_PER_ANALYZE = 20000
+MOVES_PER_ANALYZE = 2000
 
 DEBUG = False
+
+
+    ################### to remove
+P1NOFIGURES = 0
+P1STRONGER = 0
+P1CLOSER = 0
 
 
 def dprint(string):
@@ -85,7 +91,8 @@ class Player():
                         or id == P1 and elem.islower()}
 
     def figure_loss(self, figure):
-        self.figures.pop(figure)
+        if figure in self.figures:
+            self.figures.pop(figure)
 
     def get_strongest(self):
         return max([FIGURES[f.upper()] for f in self.figures.keys()])
@@ -255,7 +262,10 @@ class Jungle():
 
     def random_move(self, board, player):
         p = self.s.player_0 if player == P0 else self.s.player_1
-        return random.choice(self.get_moves(board, p))
+        moves = self.get_moves(board, p)
+        if len(moves) == 0:
+            return None
+        return random.choice(moves)
 
     def do_move(self, move, player_id):
         # Get a player based on it's id
@@ -276,15 +286,23 @@ class Jungle():
         self.s.board[dst_x][dst_y] = fig
 
         p.figures[fig] = (dst_x, dst_y)
-    
+
     def terminal(self):
+
+            
+        global P1NOFIGURES 
+        global P1STRONGER
+        global P1CLOSER
+
         # One of the player lacks figures
-        if self.s.player_0.no_figures():
-            dprint("P0 has no figures")
-            return P1
         if self.s.player_1.no_figures():
             dprint("P1 has no figures")
             return P0
+        if self.s.player_0.no_figures():
+            dprint("P0 has no figures")
+            P1NOFIGURES +=1
+            return P1
+        
 
         # A trap is taken
         if self.s.board[0][3] != FREE:
@@ -303,20 +321,22 @@ class Jungle():
                 return P0
             if p1strong > p0strong:
                 dprint("P1 has a better figure")
+                P1STRONGER += 1
                 return P1
 
             p0trap_dist = self.s.player_0.dists_to_trap(self.s.board)
             p1trap_dist = self.s.player_1.dists_to_trap(self.s.board)
 
             for i in range(min(len(p0trap_dist), len(p1trap_dist))):
-                if p0trap_dist[i] > p1trap_dist[i]:
+                if p0trap_dist[i] < p1trap_dist[i]:
                     dprint("P0 is closer to den")
                     return P0
-                if p1trap_dist[i] > p0trap_dist[i]:
+                if p0trap_dist[i] > p1trap_dist[i]:
                     dprint("P1 is closer to den")
+                    P1CLOSER += 1
                     return P1
-            print("P1 moved second")
-            return P1  # because P0 always moves 1st
+            # print("P1 moved second")
+            return P0  # because P0 always moves 1st
 
         return None
 
@@ -324,13 +344,16 @@ class Jungle():
         """
         Play some random games for every possible state
         """
+        # player = self.s.player_0 if who == P0 else self.s.player_1
+
         games_played = 0
         p0_best, p1_best = 0, 0  # p0's best analyze won p0_best games
         p0_best_move, p1_best_move = None, None
-        for move in self.get_moves(self.board, player):
+        p = self.s.player_0 if player == P0 else self.s.player_1
+        for move in self.get_moves(self.s.board, p):
             p0won, p1won = 0, 0
             for _ in range(20):
-                who_won, plys = self.random_game(self.board, player)
+                who_won, plys = self.random_game(self.s.board, player)
                 games_played += plys
                 if who_won == P0:
                     p0won += 1
@@ -364,6 +387,10 @@ class Jungle():
                 move = self.random_move(board, player)
             else:
                 move = self.random_move(board, player)
+
+            if move is None:
+                return 1-player, ply
+
             ((fig, src), dst) = move
             dprint("next move: {}: {} → {}".format(fig, src, dst))
             dprint(self)
@@ -373,7 +400,7 @@ class Jungle():
 
             # input()
             # os.system('cls' if os.name == 'nt' else 'clear')
-
+        
             self.do_move(move, player)
 
             term = self.terminal()
@@ -388,9 +415,13 @@ class Jungle():
         move = None
         while True:
             if player == P0:
-                move = self.random_move(self.s.board, player)
-            else:
                 move = self.analyze(player)
+            else:
+                move = self.random_move(self.s.board, player)
+
+            if move is None:
+                return 1-player
+
             self.do_move(move, player)
 
             term = self.terminal()
@@ -405,7 +436,7 @@ class Jungle():
         for fig, (a, b) in self.s.player_1.figures.items():
             res[a][b] = fig
 
-        res = ["0123456"] + res
+        res = ["0123456    <-- P0 (capital letters)"] + res
         return '\n'.join(''.join(roww) for roww in res)
 
     def __repr__(self):
@@ -414,10 +445,22 @@ class Jungle():
 
 if __name__ == "__main__":
     player1won = 0  # Games won by a "smart" player (p1 analyzes)
-    games = 1000
-    
+    games = 10
+    player = P0
     for _ in range(games):
         jungle = Jungle()
-        if jungle.play(P0) == P1:
+        print("\n---------")
+        if jungle.play(player) == P1:
             player1won += 1
+            print("P1 won!")
+        else: 
+            print("P0 won!")    
+        player = 1-player        
+        print("p0's dists {}".format(jungle.s.player_0.dists_to_trap(jungle.s.board)))
+        print("p1's dists {}".format(jungle.s.player_1.dists_to_trap(jungle.s.board)))
+        print(jungle)
+        print("  ")
     print("Player1 won {} / {} games".format(player1won, games))
+    print("p1 no fig = {}".format(P1NOFIGURES))
+    print("p1 strnge = {}".format(P1STRONGER))
+    print("p1 closer = {}".format(P1CLOSER))
