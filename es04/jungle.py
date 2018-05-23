@@ -66,6 +66,13 @@ class State():
             return self.player_1
         return self.player_0
 
+    def get_copy(self):
+        return State(copy.deepcopy(self.board),
+                     copy.deepcopy(self.player_0),
+                     copy.deepcopy(self.player_1),
+                     copy.deepcopy(self.whos_now),
+                     0)
+
 
 class Player():
 
@@ -97,7 +104,7 @@ class Jungle():
         self.s = State(INIT_BOARD,
                        Player(P0, INIT_BOARD),
                        Player(P1, INIT_BOARD),
-                       P0, BEATS_TRESH)
+                       P0, 0)
 
     def get_fig(self, field):
         x, y = field
@@ -114,8 +121,8 @@ class Jungle():
         # If neigh is in a trap
         if self.is_trap(neigh_pos):
             return True
-        
-        # Rat which is in the pond cannot beat neigh on a meadow 
+
+        # Rat which is in the pond cannot beat neigh on a meadow
         if self.is_rat(fig) and self.is_pond(fig_pos) and self.is_meadow(neigh_pos):
             return False
 
@@ -319,7 +326,7 @@ class Jungle():
         Play a random game from a current state and afterall restore init state
         """
         # Do backup or current state
-        # backup = JungleState(self.s.player_0, self.s.player_1, player, self.s,board, self.no_beats)
+        backup = self.s.get_copy()
         while True:
             if player == P0:
                 move = self.random_move(self.s.board, player)
@@ -328,6 +335,7 @@ class Jungle():
             ((fig, src), dst) = move
             print("next move: {}: {} → {}".format(fig, src, dst))
             print(self)
+            print("Moves without beating: {}".format(self.s.no_beats))
             print(sorted(self.s.player_0.figures.keys()))
             print(sorted(self.s.player_1.figures.keys()))
 
@@ -338,11 +346,8 @@ class Jungle():
 
             term = self.terminal()
             if term is not None:
-                print(self)
-                print("Player{} wins!".format(term))
                 # Restore backup
-               # # self.
-
+                self.s = backup
                 return term
 
             player = 1 - player
@@ -368,4 +373,10 @@ if __name__ == "__main__":
     print(jungle.s.player_0.figures)
     print(jungle.s.player_1.figures)
 
-    jungle.random_game(P0)
+    print("Player{} won".format(jungle.random_game(P0)))
+
+    print()
+    print("#####")
+    print()
+    print()
+    print(jungle)
