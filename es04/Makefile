@@ -8,4 +8,4 @@ reversiplay:
 	python3 reversi.py
 
 jungle:
-	pypy jungle.py
+	python3 jungle.py
