@@ -275,6 +275,54 @@ class Board:
         else:
             return min(values)
 
+    def awesomest_move(self, player):
+        """
+        alpha-beta pruning
+        """
+        awesomest = None
+        minval, maxval = INF, -INF
+        for m in self.moves(player):
+            board = self.lookup_move(self.board, m, player)
+            bonus = self.bonus(board, player)
+            # Pruning will be conciderd at least on grandson's level
+            if player == MAX:
+                bonus += self.min_value(board, 1-player, DEPTH-1, -INF, INF)
+                if bonus > maxval:
+                    maxval = bonus
+                    awesomest = m
+            else:
+                bonus += self.max_value(board, 1-player, DEPTH-1, -INF, INF)
+                if bonus < minval:
+                    minval = bonus
+                    awesomest = m
+        return awesomest
+
+    def max_value(self, board, player, depth, alpha, beta):
+        if self.terminal() or depth == 0:
+            return self.bonus(board, player)
+        value = -INF
+
+        for move in self.moves(player):
+            b = self.lookup_move(board, move, player)
+            value = max(value, self.min_value(b, 1-player, depth-1, alpha, beta))
+            if value >= beta:
+                return value
+            alpha = max(alpha, value)
+        return value
+
+    def min_value(self, board, player, depth, alpha, beta):
+        if self.terminal() or depth == 0:
+            return self.bonus(board, player)
+        value = INF
+
+        for move in self.moves(player):
+            b = self.lookup_move(board, move, player)
+            value = min(value, self.max_value(b, 1-player, depth-1, alpha, beta))
+            if value <= alpha:
+                return value
+            beta = min(beta, value)
+        return value
+
 
 def play(show=False):
     player = 0
@@ -285,7 +333,8 @@ def play(show=False):
             B.draw()
             B.show()
         if player == MAX:
-            m = B.awesome_move(player)  # !!!!
+            m = B.awesomest_move(player)  # !!!!
+            # m = B.alpha_beta(player)
         else:
             m = B.random_move(player)
         B.do_move(m, player)
