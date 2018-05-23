@@ -44,8 +44,9 @@ DEN = '*'
 POND = '~'
 
 BEATS_TRESH = 50
+MOVES_PER_ANALYZE = 20000
 
-DEBUG = True
+DEBUG = False
 
 
 def dprint(string):
@@ -95,7 +96,7 @@ class Player():
         return sorted([abs(tx - fx) + abs(ty - fy) for fx, fy in self.figures.values()])
 
     def no_figures(self):
-        return self.figures == set()
+        return len(self.figures) == 0
 
 
 class Jungle():
@@ -250,8 +251,6 @@ class Jungle():
                         moves.append((figure, neigh_pos))
                     elif self.can_beat(fig, field, neigh_pos):
                         moves.append((figure, neigh_pos))
-
-        # TODO move if can beat
         return moves
 
     def random_move(self, board, player):
@@ -269,7 +268,7 @@ class Jungle():
         self.s.no_beats += 1
 
         if self.is_free(self.s.board, (dst_x, dst_y)) is False:
-            print("{} bije {}".format(fig, self.get_fig((dst_x, dst_y))))
+            dprint("{} bije {}".format(fig, self.get_fig((dst_x, dst_y))))
             opp.figure_loss(self.get_fig((dst_x, dst_y)))
             self.s.no_beats = 0
 
@@ -321,26 +320,59 @@ class Jungle():
 
         return None
 
-    def random_game(self, player):
+    def analyze(self, player):
         """
-        Play a random game from a current state and afterall restore init state
+        Play some random games for every possible state
+        """
+        games_played = 0
+        p0_best, p1_best = 0, 0  # p0's best analyze won p0_best games
+        p0_best_move, p1_best_move = None, None
+        for move in self.get_moves(self.board, player):
+            p0won, p1won = 0, 0
+            for _ in range(20):
+                who_won, plys = self.random_game(self.board, player)
+                games_played += plys
+                if who_won == P0:
+                    p0won += 1
+                else:
+                    p1won += 1
+
+            if p0won > p0_best:
+                p0_best = p0_best
+                p0_best_move = move
+
+            if p1won > p1_best:
+                p1_best = p1_best
+                p1_best_move = move
+
+            if games_played > 20000:
+                break
+        if player == P0:
+            return p0_best_move
+        return p1_best_move
+
+    def random_game(self, board, player):
+        """
+        Play a random game from a given state and afterall restore init state
         """
         # Do backup or current state
         backup = self.s.get_copy()
+        ply = 0
         while True:
+            ply += 1
             if player == P0:
-                move = self.random_move(self.s.board, player)
+                move = self.random_move(board, player)
             else:
-                move = self.random_move(self.s.board, player)
+                move = self.random_move(board, player)
             ((fig, src), dst) = move
-            print("next move: {}: {} → {}".format(fig, src, dst))
-            print(self)
-            print("Moves without beating: {}".format(self.s.no_beats))
-            print(sorted(self.s.player_0.figures.keys()))
-            print(sorted(self.s.player_1.figures.keys()))
+            dprint("next move: {}: {} → {}".format(fig, src, dst))
+            dprint(self)
+            dprint("Moves without beating: {}".format(self.s.no_beats))
+            dprint(sorted(self.s.player_0.figures.keys()))
+            dprint(sorted(self.s.player_1.figures.keys()))
 
             # input()
-            os.system('cls' if os.name == 'nt' else 'clear')
+            # os.system('cls' if os.name == 'nt' else 'clear')
 
             self.do_move(move, player)
 
@@ -348,9 +380,22 @@ class Jungle():
             if term is not None:
                 # Restore backup
                 self.s = backup
-                return term
+                return term, ply
 
             player = 1 - player
+    
+    def play(self, player):
+        move = None
+        while True:
+            if player == P0:
+                move = self.random_move(self.s.board, player)
+            else:
+                move = self.analyze(player)
+            self.do_move(move, player)
+
+            term = self.terminal()
+            if term is not None:
+                return term
 
     def __str__(self):
         res = [b[:] + [" ", str(i)] for i, b in enumerate(BOARD)]
@@ -368,15 +413,11 @@ class Jungle():
 
 
 if __name__ == "__main__":
-    jungle = Jungle()
-    print(jungle)
-    print(jungle.s.player_0.figures)
-    print(jungle.s.player_1.figures)
-
-    print("Player{} won".format(jungle.random_game(P0)))
-
-    print()
-    print("#####")
-    print()
-    print()
-    print(jungle)
+    player1won = 0  # Games won by a "smart" player (p1 analyzes)
+    games = 1000
+    
+    for _ in range(games):
+        jungle = Jungle()
+        if jungle.play(P0) == P1:
+            player1won += 1
+    print("Player1 won {} / {} games".format(player1won, games))
