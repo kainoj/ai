@@ -269,8 +269,8 @@ def do_move(state, move, player_id):
 
     state.board[src_x][src_y] = BOARD[src_x][src_y]
     state.board[dst_x][dst_y] = fig
-
-    p.figures[fig] = (dst_x, dst_y)
+ ###############################################
+    p.move(fig, (dst_x, dst_y))
     return state
 
 
@@ -300,6 +300,30 @@ def random_game(base_state, player_id):
             return term, ply
 
         player_id = 1 - player_id
+
+
+def h(state, move, player):
+    ((fig, src), dst) = move
+    sx, sy = src
+    dx, dy = dst
+    if is_free(state.board, (dx, dy)) is False:
+        return 100
+    return random.randint(0, 100)
+
+
+def awesome_move(state, player):
+    moves = get_moves(state.board, player)
+    if moves is None:
+        return None
+
+    the_move = None
+    best_h = 0
+    for move in moves:
+        q = h(state, move, player)
+        if q > best_h:
+            best_h = q
+            the_move = move
+    return the_move
 
 
 DEBUG = False
