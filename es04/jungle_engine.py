@@ -4,7 +4,7 @@ import random
 BOARD = [list(row) for row in
          ['..#*#..',  # meadow: .
           '...#...',  # trap:   #
-          '.......',  # pond:   ~   
+          '.......',  # pond:   ~
           '.~~.~~.',  # den:    *
           '.~~.~~.',
           '.~~.~~.',
@@ -35,7 +35,8 @@ RAT = 'R'
 TIGER = 'T'
 LION = 'L'
 ELEPHANT = 'E'
-FIGURES = {RAT: 0, 'C': 1, 'D': 2, 'W': 3, 'J': 4, TIGER: 5, LION: 6, ELEPHANT: 7}
+FIGURES = {RAT: 0, 'C': 1, 'D': 2, 'W': 3, 'J': 4,
+           TIGER: 5, LION: 6, ELEPHANT: 7}
 
 DIRS = {(0, -1), (0, 1), (1, 0), (-1, 0)}
 
@@ -109,7 +110,8 @@ def is_predator(fig):
 
 
 def is_opponent(fig1, fig2):
-    return fig1.islower() and fig2.isupper() or fig1.isupper() and fig2.islower()
+    return fig1.islower() and fig2.isupper() \
+           or fig1.isupper() and fig2.islower()
 
 
 def is_opp_den(board, field, player):
@@ -269,7 +271,6 @@ def do_move(state, move, player_id):
 
     state.board[src_x][src_y] = BOARD[src_x][src_y]
     state.board[dst_x][dst_y] = fig
- ###############################################
     p.move(fig, (dst_x, dst_y))
     return state
 
@@ -306,24 +307,31 @@ def h(state, move, player):
     ((fig, src), dst) = move
     sx, sy = src
     dx, dy = dst
+    bonus = random.randint(0, 10)
+
+    # Jump into the den if possible
+    if is_opp_den(state.board, dst, player):
+        bonus += 1000000
+
+    # Preffer moves which eliminates opp's figures
     if is_free(state.board, (dx, dy)) is False:
-        return 100
-    return random.randint(0, 100)
+        bonus += 100
+
+    # P0 moved down towards P1's den
+    if dx - sx > 0 and player.id == P0:
+        bonus += 400000000
+    # P1 moved up towards P0's den
+    elif dx - sx < 0 and player.id == P1:
+        bonus += 400000000
+
+    return bonus
 
 
 def awesome_move(state, player):
     moves = get_moves(state.board, player)
     if moves is None:
         return None
-
-    the_move = None
-    best_h = 0
-    for move in moves:
-        q = h(state, move, player)
-        if q > best_h:
-            best_h = q
-            the_move = move
-    return the_move
+    return max(moves, key=lambda m: h(state, m, player))
 
 
 DEBUG = False
@@ -332,3 +340,8 @@ DEBUG = False
 def dprint(string):
     if DEBUG is True:
         print(string)
+
+
+def dinput():
+    if DEBUG:
+        input()

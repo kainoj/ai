@@ -1,6 +1,8 @@
-import os
+import sys
 import copy
-from jungle_engine import P0, P1, INIT_BOARD, BOARD, FIGURES, random_move, do_move, terminal, random_game, get_moves, awesome_move
+from jungle_engine import P0, P1, INIT_BOARD, BOARD, FIGURES, \
+                          random_move, do_move, terminal, random_game, \
+                          get_moves, awesome_move, dprint, dinput
 
 
 MOVES_PER_ANALYZE = 2000
@@ -42,7 +44,7 @@ class Player():
 
     def __init__(self, id, board):
         self.id = id
-        self.figures = {elem: (i, j) for i, row in enumerate(board) 
+        self.figures = {elem: (i, j) for i, row in enumerate(board)
                         for j, elem in enumerate(row)
                         if id == P0 and elem.isupper()
                         or id == P1 and elem.islower()}
@@ -57,11 +59,12 @@ class Player():
     def dists_to_trap(self, board):
         # Trap coords
         tx, ty = (0, 3) if self.id == P1 else (8, 3)
-        return sorted([abs(tx - fx) + abs(ty - fy) for fx, fy in self.figures.values()])
+        return sorted([abs(tx - fx) + abs(ty - fy)
+                       for fx, fy in self.figures.values()])
 
     def no_figures(self):
         return len(self.figures) == 0
-    
+
     def who_am_i(self):
         print("I am player{}".format(self.id))
 
@@ -69,10 +72,12 @@ class Player():
         return copy.deepcopy(self)
 
     def move(self, figure, to):
-        if self.id == P0 and figure.isupper() or self.id == P1 and figure.islower():
+        if self.id == P0 and figure.isupper() or \
+           self.id == P1 and figure.islower():
             self.figures[figure] = to
-        else: 
-            raise Exception("Player{}: tried to move opponent's figure ({})".format(self.id, figure))
+        else:
+            raise Exception("P{}: tried to move opponent's figure ({})"
+                            .format(self.id, figure))
 
 
 class Jungle():
@@ -94,15 +99,20 @@ class Jungle():
         while True:
             if player_id == P0:
                 # move = awesome_move(self.s, self.s.player_0)
-                move = self.analyze(self.s.get_copy(), self.s.player_0.get_copy())
                 # move = random_move(self.s.board, self.s.player_0)
-                # print("AWESOME ANALYZED MOVE: {}".format(move))
+                move = self.analyze(self.s.get_copy(),
+                                    self.s.player_0.get_copy())
             else:
-                move = random_move(self.s.board, self.s.player_1)
-                # move = self.analyze(self.s, self.s.player_1.get_copy())
-
+                # move = random_move(self.s.board, self.s.player_1)
+                # move = sel f.analyze(self.s.get_copy(),
+                #                      self.s.player_1.get_copy())
+                move = awesome_move(self.s, self.s.player_1)
             if move is None:
                 return 1-player_id
+
+            dprint(self)
+            dprint("\n> Next move:\n> player{} {}".format(player_id, move))
+            dinput()
 
             self.s = do_move(self.s, move, player_id)
 
@@ -148,6 +158,9 @@ class Jungle():
 if __name__ == "__main__":
     player1won = 0
     games = 10
+
+    if len(sys.argv) == 2:
+        games = int(sys.argv[1])
 
     player = P0
     for i in range(games):
