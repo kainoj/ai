@@ -1,11 +1,13 @@
 import random
 import sys
 import copy
+from math import sqrt, log
 
 M = 8
 MAX = 1
 MIN = 0
 INF = 100000000
+SIMULATIONS = 32
 
 DEBUG = False
 
@@ -37,7 +39,7 @@ class ReversiState:
         self.move = move           # A move which led to this state
         self.children = []
         self.wins = 0
-        self.playouts = 0
+        self.playouts = 1
     
     def moves(self):
         """
@@ -131,6 +133,9 @@ class Board:
 
         self.state = ReversiState(b, f, MAX, None, None)
 
+        # Total number of playouts
+        self.N = 0  
+
     def draw(self):
         self.state.draw()
     
@@ -166,6 +171,10 @@ class Board:
                 if self.balance(state.board) > 0:
                     return MAX
                 return MIN
+    
+    def Q(self, state):
+        q = sqrt(2 * log(self.N) / state.playouts)
+        return state.wins / state.playouts + q
 
     def tree_search(self, root):
         state = root
@@ -173,7 +182,7 @@ class Board:
         # 1. Selection
         while state.children:
             # choose one child
-            state = random.choice(state.children)  # todo: heuristic
+            state = max(state.children, key=lambda s: self.Q(s))
         
         # 2. Expansion
         for move in state.moves():
@@ -197,10 +206,11 @@ class Board:
         dprint("root: ")
         root.draw()
 
-        for i in range(20):
+        for i in range(SIMULATIONS):
             self.tree_search(root)
+            self.N += 1
 
-        dprint("root wins: {}".format(root.wins))
+        dprint("root wins:     {}".format(root.wins))
         dprint("root playouts: {}".format(root.playouts))
         dprint("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
 
