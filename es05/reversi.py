@@ -7,7 +7,7 @@ MAX = 1
 MIN = 0
 INF = 100000000
 
-DEBUG = True
+DEBUG = False
 
 def initial_board():
     B = [[None] * M for i in range(M)]
@@ -18,8 +18,13 @@ def initial_board():
     return B
 
 def dprint(str=""):
-    if DEBUG == True:
+    if DEBUG:
         print(str)
+
+def dinput():
+    if DEBUG:
+        input()      
+
 
 class ReversiState:
 
@@ -162,12 +167,9 @@ class Board:
                     return MAX
                 return MIN
 
-    def monte_carlo(self, root):
+    def tree_search(self, root):
         state = root
-        dprint("~~~~~~~~~ MONTE CARLO ~~~~~~~~~~\n")
-        dprint("root: ")
-        root.draw()
-
+        
         # 1. Selection
         while state.children:
             # choose one child
@@ -190,12 +192,20 @@ class Board:
                 break
             state = state.parent
         
-        best = max(state.children, key=lambda s: s.wins) # to change
+    def monte_carlo(self, root):
+        dprint("~~~~~~~~~ MC TREE SEARCH ~~~~~~~~~~\n")
+        dprint("root: ")
+        root.draw()
 
-        print("root wins: {}".format(state.wins))
-        print("root playouts: {}".format(state.playouts))
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-        
+        for i in range(20):
+            self.tree_search(root)
+
+        dprint("root wins: {}".format(root.wins))
+        dprint("root playouts: {}".format(root.playouts))
+        dprint("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+
+        # Choose the best node
+        best = min(root.children, key=lambda s: s.wins) # to change
         return best.move
 
 
@@ -205,10 +215,10 @@ class Board:
                 move = self.monte_carlo(self.state)
             else:
                 move = self.random_move(self.state)
-            print("Player{} moves".format(self.state.player))
-            print("move: {}".format(move))
+            dprint("Player{} moves".format(self.state.player))
+            dprint("move: {}".format(move))
             self.draw()
-            input()
+            dinput()
 
             s = None
             for child in self.state.children:
@@ -223,7 +233,10 @@ class Board:
             self.state = s  
             
             if (self.state.terminal()):
-                return
+                if self.balance(self.state.board) > 0:
+                    return MAX
+                else:
+                    return MIN
 
 if __name__ == "__main__":
 
@@ -232,5 +245,18 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         rounds = int(sys.argv[1])
 
-    b = Board()
-    b.play()
+    max_victories = 0
+    min_victories = 0
+
+    for i in range(rounds):
+        b = Board()
+        if( b.play() > 0 ):
+            max_victories += 1
+        else:
+            min_victories += 1
+        print("max_victories: {} / {}".format(max_victories, i+1))
+    
+    
+    print("min_victories: {}".format(min_victories))
+    
+
