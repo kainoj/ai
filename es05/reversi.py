@@ -119,8 +119,8 @@ class ReversiState:
                     res.append('#')
                 else:
                     res.append('o')
-            dprint(''.join(res))
-        dprint()
+            print(''.join(res))
+        print()
 
    
 
