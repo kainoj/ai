@@ -7,8 +7,7 @@ class Player(object):
 
     def reset(self):
         self.game = None
-        self.my_player = 1
-        self.game = Board(self.my_player)
+        self.game = Board(0)
         self.say('RDY')
 
     def say(self, what):
