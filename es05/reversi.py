@@ -108,7 +108,8 @@ class ReversiState:
             return not [y for y in opp_moves if y is not None]
         return False
 
-    def draw(self):
+    def __str__(self):
+        toprint = []
         for i in range(M):
             res = []
             for j in range(M):
@@ -119,8 +120,8 @@ class ReversiState:
                     res.append('#')
                 else:
                     res.append('o')
-            print(''.join(res))
-        print()
+            toprint.append(''.join(res))
+        return '\n'.join(toprint)
 
    
 
@@ -136,8 +137,8 @@ class Board:
         # Total number of playouts
         self.N = 0  
 
-    def draw(self):
-        self.state.draw()
+    def __str__(self):
+        return self.state.__str__()
     
 
     def balance(self, board):
@@ -202,22 +203,29 @@ class Board:
             state = state.parent
         
     def monte_carlo(self, root):
-        dprint("~~~~~~~~~ MC TREE SEARCH ~~~~~~~~~~\n")
-        dprint("root: ")
-        root.draw()
 
         for i in range(SIMULATIONS):
             self.tree_search(root)
             self.N += 1
 
-        dprint("root wins:     {}".format(root.wins))
-        dprint("root playouts: {}".format(root.playouts))
-        dprint("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-
         # Choose the best node
-        best = min(root.children, key=lambda s: s.wins) # to change
+        best = min(root.children, key=lambda s: self.Q(s))
         return best.move
 
+    def do_mtcs_move(self, move):
+        """
+        Doing a move in a mcts game requires traversing a game tree
+        """
+        s = None
+        for child in self.state.children:
+            if child.move == move:
+                s = child
+                break
+
+        if s == None:
+            s = self.state.do_move(move)
+            self.state.children.append(s)
+        return s
 
     def play(self):
         while True:
@@ -225,22 +233,13 @@ class Board:
                 move = self.monte_carlo(self.state)
             else:
                 move = self.random_move(self.state)
+
             dprint("Player{} moves".format(self.state.player))
             dprint("move: {}".format(move))
-            self.draw()
+            dprint(self)
             dinput()
 
-            s = None
-            for child in self.state.children:
-                if child.move == move:
-                    s = child
-                    break
-
-            if s == None:
-                s = self.state.do_move(move)
-                self.state.children.append(s)
-            
-            self.state = s  
+            self.state = self.do_mtcs_move(move)
             
             if (self.state.terminal()):
                 if self.balance(self.state.board) > 0:
@@ -265,7 +264,6 @@ if __name__ == "__main__":
         else:
             min_victories += 1
         print("max_victories: {} / {}".format(max_victories, i+1))
-    
     
     print("min_victories: {}".format(min_victories))
     
