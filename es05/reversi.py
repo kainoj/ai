@@ -128,11 +128,11 @@ class ReversiState:
 class Board:
     dirs = [(0, 1), (1, 0), (-1, 0), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
 
-    def __init__(self):
+    def __init__(self, who_starts):
         b = initial_board()
         f = {(i, j) for i in range(M) for j in range(M) if b[i][j] is None}
 
-        self.state = ReversiState(b, f, MAX, None, None)
+        self.state = ReversiState(b, f, who_starts, None, None)
 
         # Total number of playouts
         self.N = 0  
@@ -191,7 +191,6 @@ class Board:
         
         # 3. Simulation
         winner = self.random_game(random.choice(state.children))
-        dprint("simulation won by player{}".format(winner))
 
         # 4. Back propagation
         while True:
@@ -209,7 +208,7 @@ class Board:
             self.N += 1
 
         # Choose the best node
-        best = min(root.children, key=lambda s: self.Q(s))
+        best = min(root.children, key=lambda s: s.wins)
         return best.move
 
     def do_mtcs_move(self, move):
@@ -257,12 +256,15 @@ if __name__ == "__main__":
     max_victories = 0
     min_victories = 0
 
+    player = 0
+
     for i in range(rounds):
-        b = Board()
+        b = Board(player)
         if( b.play() > 0 ):
             max_victories += 1
         else:
             min_victories += 1
+        player = 1 - player
         print("max_victories: {} / {}".format(max_victories, i+1))
     
     print("min_victories: {}".format(min_victories))
