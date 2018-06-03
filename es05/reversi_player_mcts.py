@@ -1,7 +1,7 @@
 from reversi_player import Player
 import random
 
-class RandomPlayer(Player):
+class MctsPlayer(Player):
 
     def loop(self):
         while True:
@@ -11,7 +11,7 @@ class RandomPlayer(Player):
                 move = tuple((int(m) for m in args[2:]))
                 if move == (-1, -1):
                     move = None
-                self.game.state = self.game.state.do_move(move)
+                self.game.state = self.game.do_mtcs_move(move)
             elif cmd == 'ONEMORE':
                 self.reset()
                 continue
@@ -19,15 +19,14 @@ class RandomPlayer(Player):
                 break
             else:
                 assert cmd == 'UGO'
-
-            move = self.game.random_move(self.game.state)
-            self.game.state = self.game.state.do_move(move)
-
+           
+            move = self.game.monte_carlo(self.game.state)
+            self.game.state = self.game.do_mtcs_move(move)
             if move is None:
                 move = (-1, -1)
             self.say('IDO %d %d' % move)
 
 
 if __name__ == '__main__':
-    player = RandomPlayer()
+    player = MctsPlayer()
     player.loop()
