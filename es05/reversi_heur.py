@@ -9,10 +9,7 @@ def corners_bonus(board):
 
         if board[i][j] == MIN:
             min_corners += 1.0
-    bonus = 0
-    if max_corners + min_corners != 0:
-        bonus = 100*(max_corners - min_corners)/(max_corners + min_corners)
-    return bonus
+    return max_corners - min_corners
 
 
 def close_corner_penalty(board):
@@ -28,10 +25,7 @@ def close_corner_penalty(board):
                     max_close += 1.0
                 if board[x][y] == MIN:
                     min_close += 1.0
-    penalty = 0
-    if (max_close + min_close != 0):
-        penalty = 100.0 * (max_close - min_close)/(max_close + min_close)
-    return -penalty
+    return max_close - min_close
 
 
 def balance(board):
@@ -46,4 +40,26 @@ def balance(board):
                 min_coins += 1.0
             elif b == MAX:
                 max_coins += 1.0
-    return 100.0 * (max_coins - min_coins) / (max_coins + min_coins)
+    return max_coins - min_coins
+
+
+def field_bonus(board, player):
+    """
+    https://web.stanford.edu/class/cs221/2017/restricted/p-final/man4/final.pdf
+    """
+    BONUS = [[16.16, -3.03, 0.99, 0.43, 0.43, 0.99, -3.03, 16.16],
+                [-4.12, -1.81, -0.08, -0.27, -0.27, -0.08, -1.81, -4.12],
+                [1.33, -0.04, 0.51, 0.07, 0.07, 0.51, -0.04, 1.33],
+                [0.63, -0.18, -0.04, -0.01, -0.01, -0.04, -0.18, 0.63],
+                [0.63, -0.18, -0.04, -0.01, -0.01, -0.04, -0.18, 0.63],
+                [1.33, -0.04, 0.51, 0.07, 0.07, 0.51, -0.04, 1.33],
+                [-4.12, -1.81, -0.08, -0.27, -0.27, -0.08, -1.81, -4.12],
+                [16.16, -3.03, 0.99, 0.43, 0.43, 0.99, -3.03, 16.16]]
+    bonus = 0
+    for i in range(8):
+        for j in range(8):
+            if board[i][j] == player:
+                bonus += BONUS[i][j]
+            elif board[i][j] == MIN:
+                bonus -= BONUS[i][j]
+    return bonus
